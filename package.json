@@ -1,0 +1,43 @@
+{
+  "name": "",
+  "version": "0.1.0",
+  "description": "",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo 'No test framework configured'",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "lint:fix": "eslint . --no-error-on-unmatched-pattern --fix"
+  },
+  "pre-commit": [
+    "lint",
+    "test"
+  ],
+  "files": [
+    "/lib/**/*.js",
+    "!/lib/**/*.test.js",
+    "/lib/**/*.json",
+    "/lib/**/*.svg"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "//dependencies": {},
+  "dependencies": {},
+  "//devDependencies": {
+    "eslint*": "code style",
+    "pre-commit": "run scripts before each commit",
+    "prettier": "code formatting"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^4.2.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-prettier": "^3.1.2",
+    "pre-commit": "^1.2.2",
+    "prettier": "^1.19.1"
+  },
+  "engines": {
+    "npm": ">=6.6"
+  }
+}

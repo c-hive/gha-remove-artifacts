@@ -1,0 +1,12 @@
+# Dependencies
+/node_modules
+
+# Transpiled lib folder
+/lib
+
+# Test coveragement
+.nyc_output
+/coverage
+
+# Built npm package
+/*.tgz
