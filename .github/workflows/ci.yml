@@ -64,7 +64,7 @@ jobs:
       uses: ./
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        age: '2 months'
+        age: '1 second'
 
   create-test-artifact:
     runs-on: ubuntu-latest
