@@ -6,16 +6,30 @@ async function run() {
   console.log(process.env.GITHUB_REPOSITORY);
 
   const token = core.getInput("GITHUB_TOKEN", { required: true });
-  const Octokit = new github.GitHub(token);
+  const octokit = new github.GitHub(token);
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
 
   console.log(`Repo: ${owner} / ${repo}`);
 
-  const { workflows } = Octokit.actions.listRepoWorkflows({
+  const { workflows } = await octokit.actions.listRepoWorkflows({
     owner,
     repo,
   });
+
+  const runs = await octokit.actions.listRepoWorkflowRuns({
+    owner,
+    repo,
+  });
+
+  // workflows.forEach(workflow => {
+  //   octokit.actions.listRepoWorkflowRuns({
+  //     owner,
+  //     repo,
+  //   });
+  // });
+
+  console.log(runs);
 
   console.log(workflows);
 }
