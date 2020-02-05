@@ -6,7 +6,7 @@ async function run() {
   console.log(process.env.GITHUB_REPOSITORY);
 
   const token = core.getInput("GITHUB_TOKEN", { required: true });
-  const { Octokit } = new github.GitHub(token);
+  const Octokit = new github.GitHub(token);
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
 
