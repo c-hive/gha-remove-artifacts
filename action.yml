@@ -3,3 +3,7 @@ description: ''
 runs:
   using: 'node12'
   main: 'index.js'
+inputs:
+  age:
+    description: 'Minimum age of artifacts to be deleted (e.g. "2 months", "1 day"). Parsed by moment.'
+    required: true

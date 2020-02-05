@@ -1,5 +1,6 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
+const moment = require("moment");
 
 async function run() {
   console.log("It works!");
@@ -9,8 +10,11 @@ async function run() {
   const octokit = new github.GitHub(token);
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+  console.log("Repo:", owner, "/", repo);
 
-  console.log(`Repo: ${owner} / ${repo}`);
+  const [age, units] = core.getInput("age", { required: true }).split(" ");
+  const maxAge = moment().subtract(age, units);
+  console.log("Maximum artifact age:", maxAge);
 
   const { data: runs } = await octokit.actions.listRepoWorkflowRuns({
     owner,
@@ -25,18 +29,24 @@ async function run() {
     });
 
     for await (const artifact of artifacts.artifacts) {
-      console.log(
-        "Deleting Artifact for Workflow Run",
-        workflowRun.id,
-        ": ",
-        artifact
-      );
+      const createdAt = moment(artifact.created_at);
 
-      await octokit.actions.deleteArtifact({
-        owner,
-        repo,
-        artifact_id: artifact.id,
-      });
+      if (createdAt.isBefore(maxAge)) {
+        console.log(
+          "Deleting Artifact which was created",
+          createdAt.from(maxAge),
+          "from maximum age for Workflow Run",
+          workflowRun.id,
+          ": ",
+          artifact
+        );
+
+        await octokit.actions.deleteArtifact({
+          owner,
+          repo,
+          artifact_id: artifact.id,
+        });
+      }
     }
   }
 }
