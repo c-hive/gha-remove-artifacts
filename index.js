@@ -12,17 +12,13 @@ async function run() {
 
   console.log(`Repo: ${owner} / ${repo}`);
 
-  const { workflows } = await octokit.actions.listRepoWorkflows({
-    owner,
-    repo,
-  });
-
   const { data: runs } = await octokit.actions.listRepoWorkflowRuns({
     owner,
     repo,
   });
 
   for await (const workflowRun of runs.workflow_runs) {
+    console.log(workflowRun);
     const { data: artifacts } = await octokit.actions.listWorkflowRunArtifacts({
       owner,
       repo,
@@ -34,8 +30,6 @@ async function run() {
   }
 
   console.log(runs);
-
-  console.log(workflows);
 }
 
 run();
