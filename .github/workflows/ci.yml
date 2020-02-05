@@ -71,7 +71,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Create artifact for testing
-    - uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@master
       with:
         name: test-artifacts
         path: ./
