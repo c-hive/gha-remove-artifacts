@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 jobs:
-  build:
+  run-action:
 
     runs-on: ubuntu-latest
 
@@ -20,3 +20,5 @@ jobs:
       run: npm install
     - name: Run action
       uses: ./
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
