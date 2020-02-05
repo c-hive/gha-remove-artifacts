@@ -17,19 +17,17 @@ async function run() {
     repo,
   });
 
-  for await (const workflowRun of runs.workflow_runs) {
-    console.log(workflowRun);
+  for await (const { workflowRunId } of runs.workflow_runs) {
     const { data: artifacts } = await octokit.actions.listWorkflowRunArtifacts({
       owner,
       repo,
-      run_id: workflowRun.id,
+      run_id: workflowRunId,
     });
 
-    console.log(artifacts);
-    console.log(`Artifact found for ${workflowRun}: ${artifacts}`);
+    for await (const artifact of artifacts.artifacts) {
+      console.log("Artifact found for Run#", workflowRunId, ": ", artifact);
+    }
   }
-
-  console.log(runs);
 }
 
 run();
