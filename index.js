@@ -22,7 +22,7 @@ async function run() {
     const { data: artifacts } = await octokit.actions.listWorkflowRunArtifacts({
       owner,
       repo,
-      workflowRun,
+      run_id: workflowRun.id,
     });
 
     console.log(artifacts);
