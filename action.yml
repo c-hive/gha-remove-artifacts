@@ -9,5 +9,5 @@ inputs:
     description: 'Artifacts older than this will be deleted (e.g. "2 months", "1 day"). Parsed by moment.'
     required: true
   GITHUB_TOKEN:
-    description: 'Access token for the repository, provide as `${{ secrets.GITHUB_TOKEN }}`'
+    description: 'Access token for the repository, provide as "${{ secrets.GITHUB_TOKEN }}"'
     required: true
