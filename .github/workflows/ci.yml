@@ -48,7 +48,7 @@ jobs:
   run-action:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, test]
+    # needs: [lint, test]
     steps:
     - uses: actions/checkout@v1
     - name: Cache node_modules
