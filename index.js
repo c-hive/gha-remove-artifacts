@@ -3,9 +3,6 @@ const github = require("@actions/github");
 const moment = require("moment");
 
 async function run() {
-  console.log("It works!");
-  console.log(process.env.GITHUB_REPOSITORY);
-
   const token = core.getInput("GITHUB_TOKEN", { required: true });
   const octokit = new github.GitHub(token);
 
