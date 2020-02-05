@@ -22,3 +22,8 @@ jobs:
       uses: ./
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create artifacts for testing
+    - uses: actions/upload-artifact@master
+      with:
+        name: test-artifacts
+        path: ./
