@@ -3,26 +3,74 @@ name: CI
 on: [push]
 
 jobs:
-  run-action:
-
+  lint:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v1
-    - name: Cache NPM dependencies
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.node_version }}
+    - name: Cache node_modules
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.OS }}-node_modules-
+    - name: Install JS dependencies
+      run: ls package-lock.json && npm install || yarn install
+    - name: Lint
+      run: ls package-lock.json && npm run lint || yarn lint
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.node_version }}
+    - name: Cache node_modules
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.OS }}-node_modules-
+    - name: Install JS dependencies
+      run: ls package-lock.json && npm install || yarn install
+    - name: Test
+      run: ls package-lock.json && npm run test || yarn test
+
+  run-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint, test]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Cache node_modules
       uses: actions/cache@v1
       with:
         path: node_modules
         key: ${{ runner.OS }}-node_modules-${{ hashFiles('**//package-lock.json') }}
         restore-keys: |
           ${{ runner.OS }}--
-    - name: Install NPM dependencies
-      run: npm install
+    - name: Install JS dependencies
+      run: ls package-lock.json && npm install || yarn install
     - name: Run action
       uses: ./
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Create artifacts for testing
+
+  create-test-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v1
+    - name: Create artifact for testing
     - uses: actions/upload-artifact@master
       with:
         name: test-artifacts
