@@ -25,7 +25,18 @@ async function run() {
     });
 
     for await (const artifact of artifacts.artifacts) {
-      console.log("Artifact found for Run#", workflowRun.id, ": ", artifact);
+      console.log(
+        "Deleting Artifact for Workflow Run",
+        workflowRun.id,
+        ": ",
+        artifact
+      );
+
+      await octokit.actions.deleteArtifact({
+        owner,
+        repo,
+        artifact_id: artifact.id,
+      });
     }
   }
 }
