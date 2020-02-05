@@ -14,7 +14,14 @@ async function run() {
 
   const [age, units] = core.getInput("age", { required: true }).split(" ");
   const maxAge = moment().subtract(age, units);
-  console.log("Maximum artifact age:", age, units, "(", maxAge.format(), ")");
+  console.log(
+    "Maximum artifact age:",
+    age,
+    units,
+    "( created before",
+    maxAge.format(),
+    ")"
+  );
 
   const { data: runs } = await octokit.actions.listRepoWorkflowRuns({
     owner,
