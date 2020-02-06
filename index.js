@@ -32,6 +32,7 @@ async function run() {
   for await (const workflowRun of octokit.paginate.iterator(
     workflowRunsRequest
   )) {
+    console.log(workflowRun);
     const { data: artifacts } = await octokit.actions.listWorkflowRunArtifacts({
       owner,
       repo,
