@@ -48,12 +48,14 @@ async function run() {
               repo,
               tag_sha: workflowRun.head_sha,
             });
-            if (!tag) {
+            if (tag) {
               shouldDelete = false;
             }
             console.log(tag);
           } catch (error) {
-            console.error(error);
+            if (error.status !== 404) {
+              throw error;
+            }
           }
         }
 
