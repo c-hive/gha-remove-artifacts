@@ -55,9 +55,9 @@ async function run() {
             console.log(tag);
           } catch (error) {
             if (error.status !== 404) {
-              console.log("Tag not found for", workflowRun.head_sha);
               throw error;
             }
+            console.log("Tag not found for", workflowRun.head_sha);
           }
         }
 
