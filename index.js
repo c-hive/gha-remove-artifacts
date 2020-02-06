@@ -39,29 +39,40 @@ async function run() {
       const createdAt = moment(artifact.created_at);
 
       if (createdAt.isBefore(maxAge)) {
+        let shouldDelete = true;
+
         if (skipTags) {
-          const { data: tag } = await octokit.git.getTag({
-            owner,
-            repo,
-            tag_sha: workflowRun.head_sha,
-          });
-          console.log(tag);
+          try {
+            const { data: tag } = await octokit.git.getTag({
+              owner,
+              repo,
+              tag_sha: workflowRun.head_sha,
+            });
+            if (!tag) {
+              shouldDelete = false;
+            }
+            console.log(tag);
+          } catch (error) {
+            console.error(error);
+          }
         }
 
-        console.log(
-          "Deleting Artifact which was created",
-          createdAt.from(maxAge),
-          "from maximum age for Workflow Run",
-          workflowRun.id,
-          ": ",
-          artifact
-        );
+        if (shouldDelete) {
+          console.log(
+            "Deleting Artifact which was created",
+            createdAt.from(maxAge),
+            "from maximum age for Workflow Run",
+            workflowRun.id,
+            ": ",
+            artifact
+          );
 
-        await octokit.actions.deleteArtifact({
-          owner,
-          repo,
-          artifact_id: artifact.id,
-        });
+          await octokit.actions.deleteArtifact({
+            owner,
+            repo,
+            artifact_id: artifact.id,
+          });
+        }
       }
     }
   }
