@@ -23,12 +23,13 @@ async function run() {
   const skipTags = core.getInput("skip-tags");
   if (skipTags) console.log("Skipping tags");
 
-  const { data: runs } = await octokit.actions.listRepoWorkflowRuns({
-    owner,
-    repo,
-  });
+  const repoOptions = { owner, repo };
 
-  for await (const workflowRun of runs.workflow_runs) {
+  const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
+    repoOptions
+  );
+
+  for await (const workflowRun of octokit.paginate(workflowRunsRequest)) {
     const { data: artifacts } = await octokit.actions.listWorkflowRunArtifacts({
       owner,
       repo,
