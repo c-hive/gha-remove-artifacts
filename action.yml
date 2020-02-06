@@ -9,5 +9,8 @@ inputs:
     description: 'Artifacts older than this will be deleted (e.g. "2 months", "1 day"). Parsed by moment.'
     required: true
   GITHUB_TOKEN:
-    description: 'Access token for the repository, available under the same name in secrets'
+    description: 'Access token for the repository, available under the same name in secrets.'
     required: true
+  skip-tags:
+    description: 'If enabled, tag build artifacts (e.g. release artifacts) will be kept.'
+    required: false

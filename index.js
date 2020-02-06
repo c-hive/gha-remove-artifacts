@@ -20,6 +20,9 @@ async function run() {
     ")"
   );
 
+  const skipTags = core.getInput("skip-tags");
+  if (skipTags) console.log("Skipping tags");
+
   const { data: runs } = await octokit.actions.listRepoWorkflowRuns({
     owner,
     repo,
@@ -36,6 +39,15 @@ async function run() {
       const createdAt = moment(artifact.created_at);
 
       if (createdAt.isBefore(maxAge)) {
+        if (skipTags) {
+          const { data: tag } = await octokit.git.getTag({
+            owner,
+            repo,
+            tag_sha: workflowRun.head_sha,
+          });
+          console.log(tag);
+        }
+
         console.log(
           "Deleting Artifact which was created",
           createdAt.from(maxAge),
