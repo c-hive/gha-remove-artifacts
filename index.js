@@ -42,6 +42,7 @@ async function run() {
         let shouldDelete = true;
 
         if (skipTags) {
+          console.log("Looking for tag on sha", workflowRun.head_sha);
           try {
             const { data: tag } = await octokit.git.getTag({
               owner,
@@ -54,6 +55,7 @@ async function run() {
             console.log(tag);
           } catch (error) {
             if (error.status !== 404) {
+              console.log("Tag not found for", workflowRun.head_sha);
               throw error;
             }
           }
