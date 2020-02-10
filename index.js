@@ -31,7 +31,7 @@ async function run() {
 
   for await (const { data: workflowRuns } of octokit.paginate.iterator(
     workflowRunsRequest
-  ).data) {
+  )) {
     for await (const workflowRun of workflowRuns) {
       console.log(workflowRun);
 
@@ -41,7 +41,7 @@ async function run() {
 
       for await (const { data: artifacts } of octokit.paginate.iterator(
         artifactsRequest
-      ).data) {
+      )) {
         console.log(artifacts);
         for await (const artifact of artifacts.artifacts) {
           const createdAt = moment(artifact.created_at);
