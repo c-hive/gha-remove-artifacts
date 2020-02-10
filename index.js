@@ -35,9 +35,9 @@ async function run() {
     for await (const workflowRun of workflowRuns) {
       console.log(workflowRun);
 
-      const artifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint
-        .merge(repoOptions)
-        .merge({ run_id: workflowRun.id });
+      const artifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+        repoOptions.merge({ run_id: workflowRun.id })
+      );
 
       for await (const { data: artifacts } of octokit.paginate.iterator(
         artifactsRequest
