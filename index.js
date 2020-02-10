@@ -33,8 +33,6 @@ async function run() {
     workflowRunsRequest
   )) {
     for await (const workflowRun of workflowRuns) {
-      console.log(workflowRun);
-
       const artifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
         Object.assign(repoOptions, { run_id: workflowRun.id })
       );
