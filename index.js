@@ -29,9 +29,8 @@ async function run() {
     repoOptions
   );
 
-  for await (const workflowRun of octokit.paginate.iterator(
-    workflowRunsRequest
-  )) {
+  for await (const workflowRun of octokit.paginate.iterator(workflowRunsRequest)
+    .data) {
     console.log(workflowRun);
     const { data: artifacts } = await octokit.actions.listWorkflowRunArtifacts({
       owner,
