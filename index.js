@@ -33,7 +33,7 @@ function run() {
       )
     );
 
-    Promise.all(artifactsRequestPromises)
+    return Promise.all(artifactsRequestPromises)
       .then(artifacts => {
         const deleteArtifactsPromises = artifacts
           .filter(artifact => {
@@ -56,7 +56,7 @@ function run() {
             })
           );
 
-        Promise.all(deleteArtifactsPromises).then(() => {
+        return Promise.all(deleteArtifactsPromises).then(() => {
           console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
         });
       })
