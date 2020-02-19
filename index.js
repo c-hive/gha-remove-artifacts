@@ -39,12 +39,12 @@ function run() {
           .filter(artifact => {
             const createdAt = moment(artifact.created_at);
 
-            console.log(
+            /*             console.log(
               "Deleting Artifact which was created",
               createdAt.from(maxAge),
               ": ",
               artifact
-            );
+            ); */
 
             return createdAt.isBefore(maxAge);
           })
@@ -56,8 +56,10 @@ function run() {
             })
           );
 
+        console.log(deleteArtifactsPromises);
+
         return Promise.all(deleteArtifactsPromises).then(() => {
-          console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
+          // console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
         });
       })
       .catch(err => {
