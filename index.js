@@ -28,10 +28,8 @@ function run() {
 
   octokit.paginate(workflowRunsRequest).then(workflowRuns => {
     const artifactsRequestPromises = workflowRuns.map(workflowRun =>
-      artifactsRequestPromises.push(
-        octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-          Object.assign(repoOptions, { run_id: workflowRun.id })
-        )
+      octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+        Object.assign(repoOptions, { run_id: workflowRun.id })
       )
     );
 
