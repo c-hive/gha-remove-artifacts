@@ -26,49 +26,46 @@ function run() {
     repoOptions
   );
 
-  return octokit
-    .paginate(workflowRunsRequest)
-    .then(workflowRuns =>
-      workflowRuns.forEach(workflowRun => {
-        if (!workflowRun.id) {
-          return;
-        }
-
-        const artifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+  octokit.paginate(workflowRunsRequest).then(workflowRuns => {
+    const artifactsRequestPromises = workflowRuns.map(workflowRun =>
+      artifactsRequestPromises.push(
+        octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
           Object.assign(repoOptions, { run_id: workflowRun.id })
-        );
+        )
+      )
+    );
 
-        // eslint-disable-next-line consistent-return
-        return octokit.paginate(artifactsRequest).then(artifacts =>
-          artifacts.forEach(artifact => {
+    Promise.all(artifactsRequestPromises)
+      .then(artifacts => {
+        const deleteArtifactsPromises = artifacts
+          .filter(artifact => {
             const createdAt = moment(artifact.created_at);
-
-            if (!createdAt.isBefore(maxAge)) {
-              return;
-            }
 
             console.log(
               "Deleting Artifact which was created",
               createdAt.from(maxAge),
-              "from maximum age for Workflow Run",
-              workflowRun.id,
               ": ",
               artifact
             );
 
-            // eslint-disable-next-line consistent-return
-            return octokit.actions.deleteArtifact({
+            return createdAt.isBefore(maxAge);
+          })
+          .map(artifact =>
+            octokit.actions.deleteArtifact({
               owner,
               repo,
               artifact_id: artifact.id,
-            });
-          })
-        );
+            })
+          );
+
+        Promise.all(deleteArtifactsPromises).then(() => {
+          console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
+        });
       })
-    )
-    .catch(err => {
-      console.log(err);
-    });
+      .catch(err => {
+        console.error(err);
+      });
+  });
 }
 
 run();
