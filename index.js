@@ -33,20 +33,18 @@ function run() {
       )
     );
 
-    console.log(artifactsRequestPromises);
-
-    return Promise.all(artifactsRequestPromises)
+    Promise.all(octokit.paginate(artifactsRequestPromises))
       .then(artifacts => {
         const deleteArtifactsPromises = artifacts
           .filter(artifact => {
             const createdAt = moment(artifact.created_at);
 
-            /*             console.log(
+            console.log(
               "Deleting Artifact which was created",
               createdAt.from(maxAge),
               ": ",
               artifact
-            ); */
+            );
 
             return createdAt.isBefore(maxAge);
           })
@@ -58,10 +56,8 @@ function run() {
             })
           );
 
-        console.log(deleteArtifactsPromises);
-
-        return Promise.all(deleteArtifactsPromises).then(() => {
-          // console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
+        Promise.all(deleteArtifactsPromises).then(() => {
+          console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
         });
       })
       .catch(err => {
