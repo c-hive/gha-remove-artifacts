@@ -37,16 +37,18 @@ function run() {
 
     Promise.all(artifactsRequestPromises)
       .then(artifacts => {
+        console.log(artifacts);
+
         const deleteArtifactsPromises = artifacts
           .filter(artifact => {
             const createdAt = moment(artifact.created_at);
-
+            /*
             console.log(
               "Deleting Artifact which was created",
               createdAt.from(maxAge),
               ": ",
               artifact
-            );
+            ); */
 
             return createdAt.isBefore(maxAge);
           })
