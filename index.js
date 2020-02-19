@@ -27,45 +27,40 @@ function run() {
   );
 
   octokit.paginate(workflowRunsRequest).then(workflowRuns => {
-    const artifactsRequestPromises = workflowRuns.map(workflowRun =>
-      octokit.paginate(
-        octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-          Object.assign(repoOptions, { run_id: workflowRun.id })
+    const deleteArtifactPromises = workflowRuns
+      .filter(workflowRun => workflowRun.id)
+      .map(workflowRun =>
+        octokit.paginate(
+          octokit.actions.listWorkflowRunArtifacts.endpoint
+            .merge(Object.assign(repoOptions, { run_id: workflowRun.id }))
+            .then(artifacts =>
+              artifacts
+                .filter(artifact => {
+                  const createdAt = moment(artifact.created_at);
+
+                  return createdAt.isBefore(maxAge);
+                })
+                .map(artifact =>
+                  octokit.actions.deleteArtifact({
+                    owner,
+                    repo,
+                    artifact_id: artifact.id,
+                  })
+                )
+            )
         )
-      )
-    );
+      );
 
-    Promise.all(artifactsRequestPromises)
-      .then(artifacts => {
-        console.log(artifacts);
+    console.log(deleteArtifactPromises);
 
-        const deleteArtifactsPromises = artifacts
-          .filter(artifact => {
-            const createdAt = moment(artifact.created_at);
-            /*
-            console.log(
-              "Deleting Artifact which was created",
-              createdAt.from(maxAge),
-              ": ",
-              artifact
-            ); */
-
-            return createdAt.isBefore(maxAge);
-          })
-          .map(artifact =>
-            octokit.actions.deleteArtifact({
-              owner,
-              repo,
-              artifact_id: artifact.id,
-            })
-          );
-
-        Promise.all(deleteArtifactsPromises).then(() => {
-          console.log(`Removed ${deleteArtifactsPromises.length} artifacts`);
-        });
+    Promise.all(deleteArtifactPromises)
+      .then(() => {
+        console.log(
+          `Successfully removed ${deleteArtifactPromises.length} artifacts`
+        );
       })
       .catch(err => {
-        console.error(err);
+        console.log(err);
       });
   });
 }
