@@ -30,25 +30,27 @@ function run() {
     const deleteArtifactPromises = workflowRuns
       .filter(workflowRun => workflowRun.id)
       .map(workflowRun =>
-        octokit.paginate(
-          octokit.actions.listWorkflowRunArtifacts.endpoint
-            .merge(Object.assign(repoOptions, { run_id: workflowRun.id }))
-            .then(artifacts =>
-              artifacts
-                .filter(artifact => {
-                  const createdAt = moment(artifact.created_at);
-
-                  return createdAt.isBefore(maxAge);
-                })
-                .map(artifact =>
-                  octokit.actions.deleteArtifact({
-                    owner,
-                    repo,
-                    artifact_id: artifact.id,
-                  })
-                )
+        octokit
+          .paginate(
+            octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+              Object.assign(repoOptions, { run_id: workflowRun.id })
             )
-        )
+          )
+          .then(artifacts =>
+            artifacts
+              .filter(artifact => {
+                const createdAt = moment(artifact.created_at);
+
+                return createdAt.isBefore(maxAge);
+              })
+              .map(artifact =>
+                octokit.actions.deleteArtifact({
+                  owner,
+                  repo,
+                  artifact_id: artifact.id,
+                })
+              )
+          )
       );
 
     console.log(deleteArtifactPromises);
