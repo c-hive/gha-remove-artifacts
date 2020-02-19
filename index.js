@@ -33,6 +33,8 @@ function run() {
       )
     );
 
+    console.log(artifactsRequestPromises);
+
     return Promise.all(artifactsRequestPromises)
       .then(artifacts => {
         const deleteArtifactsPromises = artifacts
