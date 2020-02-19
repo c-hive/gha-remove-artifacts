@@ -43,23 +43,21 @@ function run() {
 
                 return createdAt.isBefore(maxAge);
               })
-              .map(artifact =>
-                octokit.actions.deleteArtifact({
+              .map(artifact => {
+                console.log(artifact.id);
+
+                return octokit.actions.deleteArtifact({
                   owner,
                   repo,
                   artifact_id: artifact.id,
-                })
-              )
+                });
+              })
           )
       );
 
-    console.log(deleteArtifactPromises);
-
     Promise.all(deleteArtifactPromises)
       .then(() => {
-        console.log(
-          `Successfully removed ${deleteArtifactPromises.length} artifacts`
-        );
+        console.log("Successfully removed artifacts");
       })
       .catch(err => {
         console.log(err);
