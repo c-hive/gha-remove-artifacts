@@ -20,9 +20,6 @@ async function run() {
     ")"
   );
 
-  const skipTags = core.getInput("skip-tags");
-  if (skipTags) console.log("Skipping tags");
-
   const repoOptions = { owner, repo };
 
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
@@ -45,44 +42,20 @@ async function run() {
           const createdAt = moment(artifact.created_at);
 
           if (createdAt.isBefore(maxAge)) {
-            let shouldDelete = true;
+            console.log(
+              "Deleting Artifact which was created",
+              createdAt.from(maxAge),
+              "from maximum age for Workflow Run",
+              workflowRun.id,
+              ": ",
+              artifact
+            );
 
-            if (skipTags) {
-              console.log("Looking for tag on sha", workflowRun.head_sha);
-              try {
-                const { data: tag } = await octokit.git.getTag({
-                  owner,
-                  repo,
-                  tag_sha: workflowRun.head_sha,
-                });
-                if (tag) {
-                  shouldDelete = false;
-                }
-                console.log(tag);
-              } catch (error) {
-                if (error.status !== 404) {
-                  throw error;
-                }
-                console.log("Tag not found for", workflowRun.head_sha);
-              }
-            }
-
-            if (shouldDelete) {
-              console.log(
-                "Deleting Artifact which was created",
-                createdAt.from(maxAge),
-                "from maximum age for Workflow Run",
-                workflowRun.id,
-                ": ",
-                artifact
-              );
-
-              await octokit.actions.deleteArtifact({
-                owner,
-                repo,
-                artifact_id: artifact.id,
-              });
-            }
+            await octokit.actions.deleteArtifact({
+              owner,
+              repo,
+              artifact_id: artifact.id,
+            });
           }
         }
       }
