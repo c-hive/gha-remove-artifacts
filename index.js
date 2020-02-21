@@ -66,13 +66,9 @@ function run() {
           )
       );
 
-    Promise.all(deleteArtifactPromises)
-      .then(() => {
-        console.log("Successfully removed artifacts");
-      })
-      .catch(err => {
-        console.log(err);
-      });
+    Promise.all(deleteArtifactPromises).catch(err => {
+      console.log(err);
+    });
   });
 }
 
