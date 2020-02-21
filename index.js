@@ -32,25 +32,36 @@ function run() {
       .map(workflowRun =>
         octokit
           .paginate(
-            octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-              Object.assign(repoOptions, { run_id: workflowRun.id })
-            )
+            octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
+              ...repoOptions,
+              run_id: workflowRun.id,
+            })
           )
           .then(artifacts =>
             artifacts
               .filter(artifact => {
                 const createdAt = moment(artifact.created_at);
 
+                console.log(
+                  artifact.id,
+                  "will be deleted which was created ",
+                  createdAt.from(maxAge)
+                );
+
                 return createdAt.isBefore(maxAge);
               })
               .map(artifact => {
-                console.log(artifact.id);
-
-                return octokit.actions.deleteArtifact({
-                  owner,
-                  repo,
-                  artifact_id: artifact.id,
-                });
+                return octokit.actions
+                  .deleteArtifact({
+                    owner,
+                    repo,
+                    artifact_id: artifact.id,
+                  })
+                  .then(() => {
+                    console.log(
+                      `Successfully removed artifact with id ${artifact.id}`
+                    );
+                  });
               })
           )
       );
