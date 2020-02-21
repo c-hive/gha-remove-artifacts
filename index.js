@@ -44,7 +44,7 @@ function run() {
 
                 console.log(
                   artifact.id,
-                  "will be deleted which was created ",
+                  "will be deleted which was created",
                   createdAt.from(maxAge)
                 );
 
@@ -65,6 +65,8 @@ function run() {
               })
           )
       );
+
+    console.log(deleteArtifactPromises.length);
 
     Promise.all(deleteArtifactPromises).catch(err => {
       console.log(err);
