@@ -4,6 +4,8 @@ const moment = require("moment");
 
 const devEnv = process.env.NODE_ENV === "dev";
 
+const isDefined = value => typeof value !== "undefined" && value !== null;
+
 if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
   require("dotenv").config();
@@ -11,29 +13,65 @@ if (devEnv) {
 
 function getToken() {
   if (devEnv) {
+    if (!isDefined(process.env.PERSONAL_ACCESS_TOKEN)) {
+      throw new Error("Missing PERSONAL_ACCESS_TOKEN environment variable");
+    }
+
     return process.env.PERSONAL_ACCESS_TOKEN;
   }
 
   return core.getInput("GITHUB_TOKEN", { required: true });
 }
 
+function getRepositoryOptions() {
+  if (devEnv && !isDefined(process.env.GITHUB_REPOSITORY)) {
+    throw new Error("Missing GITHUB_REPOSITORY environment variable");
+  }
+
+  const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+
+  if (!isDefined(owner) || !isDefined(repo)) {
+    throw new Error("Missing repository options");
+  }
+
+  return {
+    owner,
+    repo,
+  };
+}
+
 function getAge() {
   if (devEnv) {
-    return process.env.AGE.split(" ");
+    if (!isDefined(process.env.AGE)) {
+      throw new Error("Missing AGE environment variable");
+    }
+
+    const [age, units] = process.env.AGE.split(" ");
+
+    if (!isDefined(age) || !isDefined(units)) {
+      throw new Error("AGE format is invalid");
+    }
+
+    return [age, units];
   }
 
   return core.getInput("age", { required: true }).split(" ");
 }
 
+function getConfigs() {
+  return {
+    token: getToken(),
+    repoOptions: getRepositoryOptions(),
+    age: getAge(),
+  };
+}
+
 async function run() {
-  const token = getToken();
-  const octokit = new github.GitHub(token);
-
-  const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-  console.log("Repo:", owner, "/", repo);
-
-  const [age, units] = getAge();
+  const configs = getConfigs();
+  const octokit = new github.GitHub(configs.token);
+  const [age, units] = configs.age;
   const maxAge = moment().subtract(age, units);
+
   console.log(
     "Maximum artifact age:",
     age,
@@ -43,10 +81,8 @@ async function run() {
     ")"
   );
 
-  const repoOptions = { owner, repo };
-
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
-    repoOptions
+    configs.repoOptions
   );
 
   for await (const { data: workflowRuns } of octokit.paginate.iterator(
@@ -54,7 +90,7 @@ async function run() {
   )) {
     for await (const workflowRun of workflowRuns) {
       const artifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-        Object.assign(repoOptions, { run_id: workflowRun.id })
+        Object.assign(configs.repoOptions, { run_id: workflowRun.id })
       );
 
       for await (const { data: artifacts } of octokit.paginate.iterator(
@@ -83,8 +119,7 @@ async function run() {
             }
 
             await octokit.actions.deleteArtifact({
-              owner,
-              repo,
+              ...configs.repoOptions,
               artifact_id: artifact.id,
             });
           }
