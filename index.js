@@ -25,7 +25,7 @@ function getToken() {
   return core.getInput("GITHUB_TOKEN", { required: true });
 }
 
-function getRepositoryOptions() {
+function getRepoOptions() {
   if (devEnv && !isDefined(process.env.GITHUB_REPOSITORY)) {
     throw new Error("Missing GITHUB_REPOSITORY environment variable");
   }
@@ -42,7 +42,7 @@ function getRepositoryOptions() {
   };
 }
 
-function getAge() {
+function getMaxAge() {
   if (devEnv) {
     if (!isDefined(process.env.AGE)) {
       throw new Error("Missing AGE environment variable");
@@ -54,7 +54,18 @@ function getAge() {
       throw new Error("AGE format is invalid");
     }
 
-    return [age, units];
+    const maxAge = moment().subtract(age, units);
+
+    console.log(
+      "Maximum artifact age:",
+      age,
+      units,
+      "( created before",
+      maxAge.format(),
+      ")"
+    );
+
+    return moment().subtract(age, units);
   }
 
   return core.getInput("age", { required: true }).split(" ");
@@ -63,25 +74,14 @@ function getAge() {
 function getConfigs() {
   return {
     token: getToken(),
-    repoOptions: getRepositoryOptions(),
-    age: getAge(),
+    repoOptions: getRepoOptions(),
+    maxAge: getMaxAge(),
   };
 }
 
 async function run() {
   const configs = getConfigs();
   const octokit = new github.GitHub(configs.token);
-  const [age, units] = configs.age;
-  const maxAge = moment().subtract(age, units);
-
-  console.log(
-    "Maximum artifact age:",
-    age,
-    units,
-    "( created before",
-    maxAge.format(),
-    ")"
-  );
 
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
     configs.repoOptions
@@ -102,10 +102,10 @@ async function run() {
         for await (const artifact of artifacts.artifacts) {
           const createdAt = moment(artifact.created_at);
 
-          if (createdAt.isBefore(maxAge)) {
+          if (createdAt.isBefore(configs.maxAge)) {
             console.log(
               "Deleting Artifact which was created",
-              createdAt.from(maxAge),
+              createdAt.from(configs.maxAge),
               "from maximum age for Workflow Run",
               workflowRun.id,
               ": ",
