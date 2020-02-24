@@ -2,14 +2,37 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const moment = require("moment");
 
+const devEnv = process.env.NODE_ENV === "dev";
+
+if (devEnv) {
+  // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+  require("dotenv").config();
+}
+
+function getToken() {
+  if (devEnv) {
+    return process.env.PERSONAL_ACCESS_TOKEN;
+  }
+
+  return core.getInput("GITHUB_TOKEN", { required: true });
+}
+
+function getAge() {
+  if (devEnv) {
+    return process.env.AGE.split(" ");
+  }
+
+  return core.getInput("age", { required: true }).split(" ");
+}
+
 async function run() {
-  const token = core.getInput("GITHUB_TOKEN", { required: true });
+  const token = getToken();
   const octokit = new github.GitHub(token);
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
   console.log("Repo:", owner, "/", repo);
 
-  const [age, units] = core.getInput("age", { required: true }).split(" ");
+  const [age, units] = getAge();
   const maxAge = moment().subtract(age, units);
   console.log(
     "Maximum artifact age:",
@@ -50,6 +73,14 @@ async function run() {
               ": ",
               artifact
             );
+
+            if (devEnv) {
+              console.log(
+                `Development environment is recognized, skipping the removal of ${artifact.id}.`
+              );
+
+              return;
+            }
 
             await octokit.actions.deleteArtifact({
               owner,

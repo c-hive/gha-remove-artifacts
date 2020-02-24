@@ -10,3 +10,6 @@
 
 # Built npm package
 /*.tgz
+
+# Environment variables
+.env
