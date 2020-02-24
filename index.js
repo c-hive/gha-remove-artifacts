@@ -4,7 +4,9 @@ const moment = require("moment");
 
 const devEnv = process.env.NODE_ENV === "dev";
 
-const isDefined = value => typeof value !== "undefined" && value !== null;
+function isDefined(value) {
+  return typeof value !== "undefined" && value !== null;
+}
 
 if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
