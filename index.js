@@ -2,7 +2,7 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const moment = require("moment");
 
-function run() {
+async function run() {
   const token = core.getInput("GITHUB_TOKEN", { required: true });
   const octokit = new github.GitHub(token);
 
@@ -26,45 +26,72 @@ function run() {
     repoOptions
   );
 
-  octokit.paginate(workflowRunsRequest).then(workflowRuns => {
-    const deleteArtifactPromises = workflowRuns
-      .filter(workflowRun => workflowRun.id)
-      .map(workflowRun =>
-        octokit
-          .paginate(
-            octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
-              ...repoOptions,
-              run_id: workflowRun.id,
-            })
-          )
-          .then(artifacts =>
-            artifacts
-              .filter(artifact => {
-                const createdAt = moment(artifact.created_at);
+  function getWorkflowRunArtifacts(workflowRunId) {
+    return octokit.paginate(
+      octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
+        ...repoOptions,
+        run_id: workflowRunId,
+      })
+    );
+  }
 
-                console.log(
-                  artifact.id,
-                  "will be deleted which was created",
-                  createdAt.from(maxAge)
-                );
+  function getRemovableArtifacts(artifacts) {
+    return artifacts.reduce((removableArtifactsResult, artifact) => {
+      const createdAt = moment(artifact.created_at);
 
-                return createdAt.isBefore(maxAge);
-              })
-              .map(artifact => {
-                return octokit.actions
-                  .deleteArtifact({
-                    owner,
-                    repo,
-                    artifact_id: artifact.id,
-                  })
-                  .then(() => {
-                    console.log(
-                      `Successfully removed artifact with id ${artifact.id}`
-                    );
-                  });
-              })
-          )
+      if (!createdAt.isBefore(maxAge)) {
+        return removableArtifactsResult;
+      }
+
+      removableArtifactsResult.push(
+        octokit.actions
+          .deleteArtifact({
+            owner,
+            repo,
+            artifact_id: artifact.id,
+          })
+          .then(() => {
+            console.log(`Successfully removed artifact with id ${artifact.id}`);
+          })
       );
+
+      return removableArtifactsResult;
+    }, []);
+  }
+
+  octokit.paginate(workflowRunsRequest).then(workflowRuns => {
+    const deleteArtifactPromises = workflowRuns.reduce((result, page) => {
+      if (page.workflow_runs) {
+        return page.workflow_runs.reduce((_, workflowRun) => {
+          if (!workflowRun.id) {
+            return result;
+          }
+
+          result.push(
+            getWorkflowRunArtifacts(workflowRun.id).then(artifacts =>
+              getRemovableArtifacts(artifacts)
+            )
+          );
+
+          return result;
+        }, []);
+      }
+
+      if (!page.id) {
+        return result;
+      }
+
+      result.push(
+        getWorkflowRunArtifacts(page.id).then(artifacts =>
+          getRemovableArtifacts(artifacts)
+        )
+      );
+
+      return result;
+    }, []);
+
+    console.log(deleteArtifactPromises.length);
+    console.log(deleteArtifactPromises);
 
     Promise.all(deleteArtifactPromises);
   });
