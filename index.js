@@ -4,78 +4,36 @@ const moment = require("moment");
 
 const devEnv = process.env.NODE_ENV === "dev";
 
-function isDefined(value) {
-  return typeof value !== "undefined" && value !== null;
-}
-
 if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
-  require("dotenv").config();
-}
-
-function getToken() {
-  if (devEnv) {
-    if (!isDefined(process.env.PERSONAL_ACCESS_TOKEN)) {
-      throw new Error("Missing PERSONAL_ACCESS_TOKEN environment variable");
-    }
-
-    return process.env.PERSONAL_ACCESS_TOKEN;
-  }
-
-  return core.getInput("GITHUB_TOKEN", { required: true });
-}
-
-function getRepoOptions() {
-  if (devEnv && !isDefined(process.env.GITHUB_REPOSITORY)) {
-    throw new Error("Missing GITHUB_REPOSITORY environment variable");
-  }
-
-  const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-
-  if (!isDefined(owner) || !isDefined(repo)) {
-    throw new Error("Missing repository options");
-  }
-
-  return {
-    owner,
-    repo,
-  };
-}
-
-function getMaxAge() {
-  if (devEnv) {
-    if (!isDefined(process.env.AGE)) {
-      throw new Error("Missing AGE environment variable");
-    }
-
-    const [age, units] = process.env.AGE.split(" ");
-
-    if (!isDefined(age) || !isDefined(units)) {
-      throw new Error("AGE format is invalid");
-    }
-
-    const maxAge = moment().subtract(age, units);
-
-    console.log(
-      "Maximum artifact age:",
-      age,
-      units,
-      "( created before",
-      maxAge.format(),
-      ")"
-    );
-
-    return moment().subtract(age, units);
-  }
-
-  return core.getInput("age", { required: true }).split(" ");
+  require("dotenv-safe").config();
 }
 
 function getConfigs() {
+  const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+  const [age, units] = process.env.AGE.split(" ");
+  const maxAge = moment().subtract(age, units);
+
+  console.log(
+    "Maximum artifact age:",
+    age,
+    units,
+    "( created before",
+    maxAge.format(),
+    ")"
+  );
+
   return {
-    token: getToken(),
-    repoOptions: getRepoOptions(),
-    maxAge: getMaxAge(),
+    token: devEnv
+      ? process.env.PERSONAL_ACCESS_TOKEN
+      : core.getInput("GITHUB_TOKEN", { required: true }),
+    repoOptions: {
+      owner,
+      repo,
+    },
+    maxAge: devEnv
+      ? moment().subtract(age, units)
+      : core.getInput("age", { required: true }).split(" "),
   };
 }
 
