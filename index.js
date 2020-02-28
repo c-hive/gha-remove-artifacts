@@ -66,8 +66,6 @@ function run() {
           )
       );
 
-    console.log(deleteArtifactPromises.length);
-
     Promise.all(deleteArtifactPromises).catch(err => {
       console.log(err);
     });
