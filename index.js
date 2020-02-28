@@ -2,15 +2,20 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const moment = require("moment");
 
-async function run() {
-  const token = core.getInput("GITHUB_TOKEN", { required: true });
-  const octokit = new github.GitHub(token);
+const devEnv = process.env.NODE_ENV === "dev";
 
+if (devEnv) {
+  // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+  require("dotenv-safe").config();
+}
+
+function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-  console.log("Repo:", owner, "/", repo);
-
-  const [age, units] = core.getInput("age", { required: true }).split(" ");
+  const [age, units] = devEnv
+    ? process.env.AGE.split(" ")
+    : core.getInput("age", { required: true }).split(" ");
   const maxAge = moment().subtract(age, units);
+
   console.log(
     "Maximum artifact age:",
     age,
@@ -20,16 +25,30 @@ async function run() {
     ")"
   );
 
-  const repoOptions = { owner, repo };
+  return {
+    token: devEnv
+      ? process.env.PERSONAL_ACCESS_TOKEN
+      : core.getInput("GITHUB_TOKEN", { required: true }),
+    repoOptions: {
+      owner,
+      repo,
+    },
+    maxAge: moment().subtract(age, units),
+  };
+}
+
+async function run() {
+  const configs = getConfigs();
+  const octokit = new github.GitHub(configs.token);
 
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
-    repoOptions
+    configs.repoOptions
   );
 
   function getWorkflowRunArtifacts(workflowRunId) {
     return octokit.paginate(
       octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
-        ...repoOptions,
+        ...configs.repoOptions,
         run_id: workflowRunId,
       })
     );
@@ -39,15 +58,14 @@ async function run() {
     return artifacts.reduce((removableArtifactsResult, artifact) => {
       const createdAt = moment(artifact.created_at);
 
-      if (!createdAt.isBefore(maxAge)) {
+      if (!createdAt.isBefore(configs.maxAge)) {
         return removableArtifactsResult;
       }
 
       removableArtifactsResult.push(
         octokit.actions
           .deleteArtifact({
-            owner,
-            repo,
+            ...configs.repoOptions,
             artifact_id: artifact.id,
           })
           .then(() => {
