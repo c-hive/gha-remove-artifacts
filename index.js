@@ -11,7 +11,9 @@ if (devEnv) {
 
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-  const [age, units] = process.env.AGE.split(" ");
+  const [age, units] = devEnv
+    ? process.env.AGE.split(" ")
+    : core.getInput("age", { required: true }).split(" ");
   const maxAge = moment().subtract(age, units);
 
   console.log(
@@ -31,9 +33,7 @@ function getConfigs() {
       owner,
       repo,
     },
-    maxAge: devEnv
-      ? moment().subtract(age, units)
-      : core.getInput("age", { required: true }).split(" "),
+    maxAge: moment().subtract(age, units),
   };
 }
 
