@@ -90,9 +90,6 @@ async function run() {
       return result;
     }, []);
 
-    console.log(deleteArtifactPromises.length);
-    console.log(deleteArtifactPromises);
-
     Promise.all(deleteArtifactPromises);
   });
 }
