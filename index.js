@@ -66,9 +66,7 @@ function run() {
           )
       );
 
-    Promise.all(deleteArtifactPromises).catch(err => {
-      console.log(err);
-    });
+    Promise.all(deleteArtifactPromises);
   });
 }
 
