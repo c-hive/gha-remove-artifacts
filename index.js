@@ -37,7 +37,7 @@ function getConfigs() {
   };
 }
 
-async function run() {
+function run() {
   const configs = getConfigs();
   const octokit = new github.GitHub(configs.token);
 
