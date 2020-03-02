@@ -62,6 +62,14 @@ async function run() {
         return removableArtifactsResult;
       }
 
+      if (devEnv) {
+        console.log(
+          `Recognized development environment, preventing ${artifact.id} from being removed`
+        );
+
+        return removableArtifactsResult;
+      }
+
       removableArtifactsResult.push(
         octokit.actions
           .deleteArtifact({
