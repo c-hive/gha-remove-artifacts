@@ -87,6 +87,7 @@ function run() {
 
   return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
     const deleteArtifactPromises = workflowRuns.reduce((result, page) => {
+      // This branch is required because the pages are not normalized: https://github.com/octokit/rest.js/issues/1632
       if (page.workflow_runs) {
         return page.workflow_runs.reduce((_, workflowRun) => {
           if (!workflowRun.id) {
@@ -103,12 +104,16 @@ function run() {
         }, []);
       }
 
-      if (!page.id) {
+      const workflowRun = {
+        ...page,
+      };
+
+      if (!workflowRun.id) {
         return result;
       }
 
       result.push(
-        getWorkflowRunArtifacts(page.id).then(artifacts =>
+        getWorkflowRunArtifacts(workflowRun.id).then(artifacts =>
           getRemovableArtifacts(artifacts)
         )
       );
