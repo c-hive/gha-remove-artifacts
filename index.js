@@ -85,7 +85,7 @@ function run() {
     }, []);
   }
 
-  octokit.paginate(workflowRunsRequest).then(workflowRuns => {
+  return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
     const deleteArtifactPromises = workflowRuns.reduce((result, page) => {
       if (page.workflow_runs) {
         return page.workflow_runs.reduce((_, workflowRun) => {
@@ -116,7 +116,7 @@ function run() {
       return result;
     }, []);
 
-    Promise.all(deleteArtifactPromises);
+    await Promise.all(deleteArtifactPromises);
   });
 }
 
