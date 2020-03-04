@@ -41,10 +41,6 @@ function run() {
   const configs = getConfigs();
   const octokit = new github.GitHub(configs.token);
 
-  const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
-    configs.repoOptions
-  );
-
   function getWorkflowRunArtifacts(workflowRunId) {
     return octokit.paginate(
       octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
@@ -84,6 +80,10 @@ function run() {
       return removableArtifactsResult;
     }, []);
   }
+
+  const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
+    configs.repoOptions
+  );
 
   return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
     const deleteArtifactPromises = workflowRuns.reduce((result, page) => {
