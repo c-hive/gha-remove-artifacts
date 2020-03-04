@@ -1,5 +1,5 @@
 const core = require("@actions/core");
-const github = require("@actions/github");
+const { GitHub } = require("@actions/github");
 const moment = require("moment");
 
 const devEnv = process.env.NODE_ENV === "dev";
@@ -34,20 +34,32 @@ function getConfigs() {
       repo,
     },
     maxAge: moment().subtract(age, units),
+    skipTags: devEnv ? process.env.SKIP_TAGS : core.getInput("skip-tags"),
   };
 }
 
-function run() {
+async function run() {
   const configs = getConfigs();
-  const octokit = new github.GitHub(configs.token);
+  const octokit = new GitHub(configs.token);
 
-  function getWorkflowRunArtifacts(workflowRunId) {
-    return octokit.paginate(
-      octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
-        ...configs.repoOptions,
-        run_id: workflowRunId,
-      })
-    );
+  async function getTaggedCommits() {
+    const tags = await octokit.request("GET /repos/:owner/:repo/tags", {
+      ...configs.repoOptions,
+    });
+
+    return tags.data.map(tag => tag.commit.sha);
+  }
+
+  let taggedCommits;
+
+  if (configs.skipTags) {
+    try {
+      taggedCommits = await getTaggedCommits(octokit);
+    } catch (err) {
+      console.error("Error while requesting tags: ", err);
+
+      taggedCommits = [];
+    }
   }
 
   function getRemovableArtifacts(artifacts) {
@@ -81,6 +93,19 @@ function run() {
     }, []);
   }
 
+  function getWorkflowRunArtifacts(workflowRunId) {
+    return octokit.paginate(
+      octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
+        ...configs.repoOptions,
+        run_id: workflowRunId,
+      })
+    );
+  }
+
+  function skipWorkflow(sha) {
+    return configs.skipTags && taggedCommits.includes(sha);
+  }
+
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
     configs.repoOptions
   );
@@ -91,6 +116,12 @@ function run() {
       if (page.workflow_runs) {
         return page.workflow_runs.reduce((_, workflowRun) => {
           if (!workflowRun.id) {
+            return result;
+          }
+
+          if (skipWorkflow()) {
+            console.log(`Found tag for ${workflowRun.id} workflow`);
+
             return result;
           }
 
@@ -109,6 +140,10 @@ function run() {
       };
 
       if (!workflowRun.id) {
+        return result;
+      }
+
+      if (skipWorkflow()) {
         return result;
       }
 
