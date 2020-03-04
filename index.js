@@ -26,9 +26,6 @@ function getConfigs() {
   );
 
   return {
-    token: devEnv
-      ? process.env.PERSONAL_ACCESS_TOKEN
-      : core.getInput("GITHUB_TOKEN", { required: true }),
     repoOptions: {
       owner,
       repo,
