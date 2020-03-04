@@ -20,7 +20,7 @@
   "//dependencies": {},
   "dependencies": {
     "@actions/core": "^1.2.2",
-    "@actions/github": "^2.1.0",
+    "@octokit/action": "^2.0.0",
     "moment": "^2.24.0"
   },
   "//devDependencies": {
