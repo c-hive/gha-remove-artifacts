@@ -62,101 +62,70 @@ async function run() {
     }
   }
 
-  function getRemovableArtifacts(artifacts) {
-    return artifacts.reduce((removableArtifactsResult, artifact) => {
-      const createdAt = moment(artifact.created_at);
-
-      if (!createdAt.isBefore(configs.maxAge)) {
-        return removableArtifactsResult;
-      }
-
-      if (devEnv) {
-        console.log(
-          `Recognized development environment, preventing ${artifact.id} from being removed`
-        );
-
-        return removableArtifactsResult;
-      }
-
-      removableArtifactsResult.push(
-        octokit.actions
-          .deleteArtifact({
-            ...configs.repoOptions,
-            artifact_id: artifact.id,
-          })
-          .then(() => {
-            console.log(`Successfully removed artifact with id ${artifact.id}`);
-          })
-      );
-
-      return removableArtifactsResult;
-    }, []);
-  }
-
-  function getWorkflowRunArtifacts(workflowRunId) {
-    return octokit.paginate(
-      octokit.actions.listWorkflowRunArtifacts.endpoint.merge({
-        ...configs.repoOptions,
-        run_id: workflowRunId,
-      })
-    );
-  }
-
-  function skipWorkflow(sha) {
-    return configs.skipTags && taggedCommits.includes(sha);
-  }
-
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
     configs.repoOptions
   );
 
   return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
-    const deleteArtifactPromises = workflowRuns.reduce((result, page) => {
-      // This branch is required because the pages are not normalized: https://github.com/octokit/rest.js/issues/1632
-      if (page.workflow_runs) {
-        return page.workflow_runs.reduce((_, workflowRun) => {
-          if (!workflowRun.id) {
-            return result;
-          }
+    const removableArtifactPromises = workflowRuns.reduce(
+      (result, workflowRun) => {
+        if (!workflowRun.id) {
+          return result;
+        }
 
-          if (skipWorkflow()) {
-            console.log(`Found tag for ${workflowRun.id} workflow`);
+        const skipWorkflow =
+          configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
 
-            return result;
-          }
-
-          result.push(
-            getWorkflowRunArtifacts(workflowRun.id).then(artifacts =>
-              getRemovableArtifacts(artifacts)
-            )
-          );
+        if (skipWorkflow) {
+          console.log(`Tag found for ${workflowRun.head_sha}`);
 
           return result;
-        }, []);
-      }
+        }
 
-      const workflowRun = {
-        ...page,
-      };
+        const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+          {
+            ...configs.repoOptions,
+            run_id: workflowRun.id,
+          }
+        );
 
-      if (!workflowRun.id) {
+        result.push(
+          octokit.paginate(workflowRunArtifactsRequest).then(artifacts => {
+            artifacts.forEach(async artifact => {
+              const createdAt = moment(artifact.created_at);
+
+              if (!createdAt.isBefore(configs.maxAge)) {
+                return;
+              }
+
+              if (devEnv) {
+                console.log(
+                  `Recognized development environment, preventing ${artifact.id} from being removed`
+                );
+
+                return;
+              }
+
+              await octokit.actions
+                .deleteArtifact({
+                  ...configs.repoOptions,
+                  artifact_id: artifact.id,
+                })
+                .then(() => {
+                  console.log(
+                    `Successfully removed artifact with id ${artifact.id}`
+                  );
+                });
+            });
+          })
+        );
+
         return result;
-      }
+      },
+      []
+    );
 
-      if (skipWorkflow()) {
-        return result;
-      }
-
-      result.push(
-        getWorkflowRunArtifacts(workflowRun.id).then(artifacts =>
-          getRemovableArtifacts(artifacts)
-        )
-      );
-
-      return result;
-    }, []);
-
-    await Promise.all(deleteArtifactPromises);
+    await Promise.all(removableArtifactPromises);
   });
 }
 

@@ -41,5 +41,8 @@
   },
   "engines": {
     "npm": ">=6.6"
+  },
+  "resolutions": {
+    "@octokit/plugin-paginate-rest": "^2.0.0"
   }
 }
