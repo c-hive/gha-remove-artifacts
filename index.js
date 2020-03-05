@@ -1,5 +1,5 @@
 const core = require("@actions/core");
-const { GitHub } = require("@actions/github");
+const { Octokit } = require("@octokit/action");
 const moment = require("moment");
 
 const devEnv = process.env.NODE_ENV === "dev";
@@ -8,11 +8,6 @@ if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
   require("dotenv-safe").config();
 }
-
-function isTrue(value) {
-  return value === "true";
-}
-
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
   const [age, units] = devEnv
@@ -30,23 +25,20 @@ function getConfigs() {
   );
 
   return {
-    token: devEnv
-      ? process.env.PERSONAL_ACCESS_TOKEN
-      : core.getInput("GITHUB_TOKEN", { required: true }),
     repoOptions: {
       owner,
       repo,
     },
     maxAge: moment().subtract(age, units),
     skipTags: devEnv
-      ? isTrue(process.env.SKIP_TAGS)
-      : isTrue(core.getInput("skip-tags")),
+      ? process.env.SKIP_TAGS === "1"
+      : core.getInput("skip-tags") === "1",
   };
 }
 
 async function run() {
   const configs = getConfigs();
-  const octokit = new GitHub(configs.token);
+  const octokit = new Octokit();
 
   async function getTaggedCommits() {
     const tags = await octokit.request("GET /repos/:owner/:repo/tags", {
@@ -97,7 +89,7 @@ async function run() {
 
         result.push(
           octokit.paginate(workflowRunArtifactsRequest).then(artifacts => {
-            artifacts.forEach(async artifact => {
+            artifacts.forEach(artifact => {
               const createdAt = moment(artifact.created_at);
 
               if (!createdAt.isBefore(configs.maxAge)) {
@@ -112,7 +104,8 @@ async function run() {
                 return;
               }
 
-              await octokit.actions
+              // eslint-disable-next-line consistent-return
+              return octokit.actions
                 .deleteArtifact({
                   ...configs.repoOptions,
                   artifact_id: artifact.id,
