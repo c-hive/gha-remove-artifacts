@@ -55,7 +55,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: node_modules
-        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**//package-lock.json') }}
+        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.OS }}--
     - name: Install JS dependencies
@@ -65,7 +65,6 @@ jobs:
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         age: '1 second'
-        skip-tags: true
 
   create-test-artifact:
     runs-on: ubuntu-latest
