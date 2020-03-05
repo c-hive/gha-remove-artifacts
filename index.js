@@ -34,7 +34,7 @@ function getConfigs() {
   };
 }
 
-function run() {
+async function run() {
   const configs = getConfigs();
   const octokit = new Octokit();
 
@@ -42,58 +42,48 @@ function run() {
     configs.repoOptions
   );
 
-  return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
-    const removableArtifactPromises = workflowRuns.reduce(
-      (result, workflowRun) => {
-        if (!workflowRun.id) {
-          return result;
-        }
+  for await (const { data: workflowRuns } of octokit.paginate.iterator(
+    workflowRunsRequest
+  )) {
+    for await (const workflowRun of workflowRuns) {
+      const artifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+        Object.assign(configs.repoOptions, { run_id: workflowRun.id })
+      );
 
-        const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-          {
-            ...configs.repoOptions,
-            run_id: workflowRun.id,
-          }
-        );
+      for await (const { data: artifacts } of octokit.paginate.iterator(
+        artifactsRequest
+      )) {
+        console.log(artifacts);
+        for await (const artifact of artifacts.artifacts) {
+          const createdAt = moment(artifact.created_at);
 
-        result.push(
-          octokit.paginate(workflowRunArtifactsRequest).then(artifacts => {
-            artifacts.forEach(async artifact => {
-              const createdAt = moment(artifact.created_at);
+          if (createdAt.isBefore(configs.maxAge)) {
+            console.log(
+              "Deleting Artifact which was created",
+              createdAt.from(configs.maxAge),
+              "from maximum age for Workflow Run",
+              workflowRun.id,
+              ": ",
+              artifact
+            );
 
-              if (!createdAt.isBefore(configs.maxAge)) {
-                return;
-              }
+            if (devEnv) {
+              console.log(
+                `Development environment is recognized, skipping the removal of ${artifact.id}.`
+              );
 
-              if (devEnv) {
-                console.log(
-                  `Recognized development environment, preventing ${artifact.id} from being removed`
-                );
+              return;
+            }
 
-                return;
-              }
-
-              await octokit.actions
-                .deleteArtifact({
-                  ...configs.repoOptions,
-                  artifact_id: artifact.id,
-                })
-                .then(() => {
-                  console.log(
-                    `Successfully removed artifact with id ${artifact.id}`
-                  );
-                });
+            await octokit.actions.deleteArtifact({
+              ...configs.repoOptions,
+              artifact_id: artifact.id,
             });
-          })
-        );
-
-        return result;
-      },
-      []
-    );
-
-    await Promise.all(removableArtifactPromises);
-  });
+          }
+        }
+      }
+    }
+  }
 }
 
 run();
