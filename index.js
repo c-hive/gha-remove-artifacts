@@ -58,7 +58,7 @@ async function run() {
     } catch (err) {
       console.error("Error while requesting tags: ", err);
 
-      taggedCommits = [];
+      throw err;
     }
   }
 
