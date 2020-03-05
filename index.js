@@ -9,6 +9,7 @@ if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
   require("dotenv-safe").config();
 }
+
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
   const [age, units] = devEnv
