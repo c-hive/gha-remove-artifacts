@@ -1,5 +1,5 @@
 const core = require("@actions/core");
-const github = require("@actions/github");
+const { Octokit } = require("@octokit/action");
 const moment = require("moment");
 
 const devEnv = process.env.NODE_ENV === "dev";
@@ -26,9 +26,6 @@ function getConfigs() {
   );
 
   return {
-    token: devEnv
-      ? process.env.PERSONAL_ACCESS_TOKEN
-      : core.getInput("GITHUB_TOKEN", { required: true }),
     repoOptions: {
       owner,
       repo,
@@ -39,7 +36,7 @@ function getConfigs() {
 
 async function run() {
   const configs = getConfigs();
-  const octokit = new github.GitHub(configs.token);
+  const octokit = new Octokit();
 
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
     configs.repoOptions
