@@ -1,6 +1,7 @@
 const core = require("@actions/core");
 const { Octokit } = require("@octokit/action");
 const moment = require("moment");
+const yn = require("yn");
 
 const devEnv = process.env.NODE_ENV === "dev";
 
@@ -31,8 +32,8 @@ function getConfigs() {
     },
     maxAge: moment().subtract(age, units),
     skipTags: devEnv
-      ? process.env.SKIP_TAGS === "1"
-      : core.getInput("skip-tags") === "1",
+      ? yn(process.env.SKIP_TAGS)
+      : yn(core.getInput("skip-tags")),
   };
 }
 
