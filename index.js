@@ -61,7 +61,7 @@ function run() {
 
         result.push(
           octokit.paginate(workflowRunArtifactsRequest).then(artifacts => {
-            artifacts.forEach(async artifact => {
+            artifacts.forEach(artifact => {
               const createdAt = moment(artifact.created_at);
 
               if (!createdAt.isBefore(configs.maxAge)) {
@@ -76,7 +76,8 @@ function run() {
                 return;
               }
 
-              await octokit.actions
+              // eslint-disable-next-line consistent-return
+              return octokit.actions
                 .deleteArtifact({
                   ...configs.repoOptions,
                   artifact_id: artifact.id,
