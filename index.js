@@ -56,13 +56,10 @@ async function run() {
     return tags.data.map(tag => tag.commit.sha);
   }
 
-  console.log(configs.skipTags);
-
   let taggedCommits;
 
   if (configs.skipTags) {
     try {
-      console.log("Query ...");
       taggedCommits = await getTaggedCommits(octokit);
     } catch (err) {
       console.error("Error while requesting tags: ", err);
