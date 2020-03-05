@@ -43,16 +43,14 @@ async function run() {
   const octokit = new Octokit();
 
   async function getTaggedCommits() {
-    const listMatchingRefsRequest = octokit.git.listMatchingRefs.endpoint.merge(
-      {
-        ...configs.repoOptions,
-        ref: "tags",
-      }
-    );
+    const listTagsRequest = octokit.repos.listTags.endpoint.merge({
+      ...configs.repoOptions,
+      ref: "tags",
+    });
 
-    const tags = await octokit.paginate(listMatchingRefsRequest);
+    const tags = await octokit.paginate(listTagsRequest);
 
-    return tags.map(tag => tag.object.sha);
+    return tags.map(tag => tag.commit.sha);
   }
 
   let taggedCommits;
