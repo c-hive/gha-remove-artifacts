@@ -9,6 +9,10 @@ if (devEnv) {
   require("dotenv-safe").config();
 }
 
+function isTrue(value) {
+  return value === "true";
+}
+
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
   const [age, units] = devEnv
@@ -34,7 +38,9 @@ function getConfigs() {
       repo,
     },
     maxAge: moment().subtract(age, units),
-    skipTags: devEnv ? process.env.SKIP_TAGS : core.getInput("skip-tags"),
+    skipTags: devEnv
+      ? isTrue(process.env.SKIP_TAGS)
+      : isTrue(core.getInput("skip-tags")),
   };
 }
 
@@ -50,10 +56,13 @@ async function run() {
     return tags.data.map(tag => tag.commit.sha);
   }
 
+  console.log(configs.skipTags);
+
   let taggedCommits;
 
   if (configs.skipTags) {
     try {
+      console.log("Query ...");
       taggedCommits = await getTaggedCommits(octokit);
     } catch (err) {
       console.error("Error while requesting tags: ", err);
