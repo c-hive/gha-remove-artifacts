@@ -79,7 +79,7 @@ async function run() {
         configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
 
       if (skipWorkflow) {
-        console.log(`Tag found for ${workflowRun.head_sha}`);
+        console.log(`Skipping tagged run ${workflowRun.head_sha}`);
 
         return result;
       }
