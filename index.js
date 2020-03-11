@@ -43,7 +43,7 @@ function run() {
   );
 
   return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
-    const workflowRunPromises = workflowRuns.reduce((result, workflowRun) => {
+    const workflowRunPromises = workflowRuns.map(workflowRun => {
       const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
         {
           ...configs.repoOptions,
@@ -51,43 +51,39 @@ function run() {
         }
       );
 
-      result.push(
-        octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
-          artifacts.reduce((artifactsResult, artifact) => {
-            const createdAt = moment(artifact.created_at);
+      return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
+        artifacts.reduce((artifactsResult, artifact) => {
+          const createdAt = moment(artifact.created_at);
 
-            if (!createdAt.isBefore(configs.maxAge)) {
-              return artifactsResult;
-            }
+          if (!createdAt.isBefore(configs.maxAge)) {
+            return artifactsResult;
+          }
 
-            if (devEnv) {
-              console.log(
-                `Recognized development environment, preventing ${artifact.id} from being removed`
-              );
-
-              return artifactsResult;
-            }
-
-            artifactsResult.push(
-              octokit.actions
-                .deleteArtifact({
-                  ...configs.repoOptions,
-                  artifact_id: artifact.id,
-                })
-                .then(() => {
-                  console.log(
-                    `Successfully removed artifact with id ${artifact.id}`
-                  );
-                })
+          if (devEnv) {
+            console.log(
+              `Recognized development environment, preventing ${artifact.id} from being removed`
             );
 
             return artifactsResult;
-          }, [])
-        )
-      );
+          }
 
-      return result;
-    }, []);
+          artifactsResult.push(
+            octokit.actions
+              .deleteArtifact({
+                ...configs.repoOptions,
+                artifact_id: artifact.id,
+              })
+              .then(() => {
+                console.log(
+                  `Successfully removed artifact with id ${artifact.id}`
+                );
+              })
+          );
+
+          return artifactsResult;
+        }, [])
+      );
+    });
 
     return Promise.all(workflowRunPromises).then(results => {
       const filteredResult = results.filter(result => result.length);
