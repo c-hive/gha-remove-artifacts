@@ -44,10 +44,6 @@ function run() {
 
   return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
     const workflowRunPromises = workflowRuns.reduce((result, workflowRun) => {
-      if (!workflowRun.id) {
-        return result;
-      }
-
       const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
         {
           ...configs.repoOptions,
