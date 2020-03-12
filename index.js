@@ -42,7 +42,7 @@ function run() {
     configs.repoOptions
   );
 
-  return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
+  return octokit.paginate(workflowRunsRequest).then(workflowRuns => {
     const artifactPromises = workflowRuns.map(workflowRun => {
       const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
         {
@@ -51,24 +51,26 @@ function run() {
         }
       );
 
-      // Let's add `filter()` at the end of this.
       return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
-        artifacts.reduce((artifactsResult, artifact) => {
-          const createdAt = moment(artifact.created_at);
+        artifacts
+          .filter(artifact => {
+            const createdAt = moment(artifact.created_at);
 
-          if (!createdAt.isBefore(configs.maxAge)) {
-            return artifactsResult;
-          }
+            if (!createdAt.isBefore(configs.maxAge)) {
+              return false;
+            }
 
-          if (devEnv) {
-            console.log(
-              `Recognized development environment, preventing ${artifact.id} from being removed`
-            );
+            if (devEnv) {
+              console.log(
+                `Recognized development environment, preventing ${artifact.id} from being removed.`
+              );
 
-            return artifactsResult;
-          }
+              return false;
+            }
 
-          artifactsResult.push(
+            return true;
+          })
+          .map(artifact =>
             octokit.actions
               .deleteArtifact({
                 ...configs.repoOptions,
@@ -76,13 +78,10 @@ function run() {
               })
               .then(() => {
                 console.log(
-                  `Successfully removed artifact with id ${artifact.id}`
+                  `Successfully removed artifact with id ${artifact.id}.`
                 );
               })
-          );
-
-          return artifactsResult;
-        }, [])
+          )
       );
     });
 
