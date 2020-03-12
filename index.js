@@ -43,7 +43,7 @@ function run() {
   );
 
   return octokit.paginate(workflowRunsRequest).then(async workflowRuns => {
-    const workflowRunPromises = workflowRuns.map(workflowRun => {
+    const artifactPromises = workflowRuns.map(workflowRun => {
       const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
         {
           ...configs.repoOptions,
@@ -51,6 +51,7 @@ function run() {
         }
       );
 
+      // Let's add `filter()` at the end of this.
       return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
         artifacts.reduce((artifactsResult, artifact) => {
           const createdAt = moment(artifact.created_at);
@@ -85,11 +86,9 @@ function run() {
       );
     });
 
-    return Promise.all(workflowRunPromises).then(results => {
-      const filteredResult = results.filter(result => result.length);
-
-      return Promise.all([].concat(...filteredResult));
-    });
+    return Promise.all(artifactPromises).then(artifactDeletePromises =>
+      Promise.all([].concat(...artifactDeletePromises))
+    );
   });
 }
 
