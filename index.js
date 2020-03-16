@@ -116,7 +116,7 @@ async function run() {
                 })
                 .then(() => {
                   console.log(
-                    `Recognized development environment, preventing ${artifact.id} from being removed.`
+                    `Successfully removed artifact with id ${artifact.id}.`
                   );
                 });
             })
