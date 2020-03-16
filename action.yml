@@ -12,5 +12,5 @@ inputs:
     description: 'Access token for the repository, available under the same name in secrets.'
     required: true
   skip-tags:
-    description: 'If enabled, tag build artifacts (e.g. release artifacts) will be kept.'
+    description: 'true/false. If enabled, tag build artifacts (e.g. release artifacts) will be kept.'
     required: false
