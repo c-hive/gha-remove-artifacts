@@ -1,17 +1,34 @@
-# JavaScript Boilerplate
+# gha-remove-artifacts
 
-#### A boilerplate that sets the grounds for any kind of JS development. More generic things, less specific things.
+#### GitHub Action to remove old artifacts
 
-It has
-- formatting
-- linting
-- editor options
-- pre-commit hook
-- gitignore
-- [~~npmignore~~ npm files](https://github.com/c-hive/guides/blob/2d3e41b73515a571dd78576e02d2fd15fe786d9e/js/package.md#what-to-include)
-- [dependency comments](https://github.com/c-hive/guides/blob/2d3e41b73515a571dd78576e02d2fd15fe786d9e/js/best-practices.md#comment-dependencies-in-the-packagejson)
-- dependency security fixes
-- npm version requirement [to avoid `package-lock` ping-pong](https://github.com/c-hive/guides/blob/24ce093e59f89374ed2bf0a2e1fc5c45e5490044/js/best-practices.md#specify-npm-version-requirements-to-avoid-package-lock-ping-pong)
+GitHub Action Artifacts are removed after [90 days](https://github.community/t5/GitHub-Actions/Managing-Actions-storage-space/m-p/41424/highlight/true#M4618). This cannot be configured either globally or per project. There's also a limit on free artifact space after which it becomes a payed resource. There's no configurable storage limit per project either, so some projects might use up all quota and not leave room for others.
+
+We created this Action to solve these problems. It can
+- remove artifacts that are older than some custom timeframe
+- keep release (tagged) artifacts
+
+`.github/workflows/remove-old-artifacts.yml`
+```
+name: Remove old artifacts
+
+on:
+  schedule:
+    # Every day at 1am
+    - cron: '0 1 * * *'
+
+jobs:
+  remove-old-artifacts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Remove old artifacts
+      uses: c-hive/gha-remove-artifacts
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        age: '1 month'
+        skip-tags: true
+```
 
 ## Conventions
 
