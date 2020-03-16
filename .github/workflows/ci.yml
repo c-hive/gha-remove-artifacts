@@ -27,10 +27,31 @@ jobs:
     - name: Lint
       run: ls package-lock.json && npm run lint || yarn lint
 
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.node_version }}
+      - name: Cache node_modules
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+                  ${{ runner.OS }}-node_modules-
+      - name: Install JS dependencies
+        run: ls package-lock.json && npm install || yarn install
+      - name: Build
+        run: npm run build
+
   run-action:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: lint
+    needs: [lint, build]
     steps:
     - uses: actions/checkout@v1
     - name: Cache node_modules
