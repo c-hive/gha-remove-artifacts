@@ -56,22 +56,20 @@ function run() {
           .filter(artifact => {
             const createdAt = moment(artifact.created_at);
 
-            if (!createdAt.isBefore(configs.maxAge)) {
-              return false;
-            }
-
-            if (devEnv) {
-              console.log(
-                `Recognized development environment, preventing ${artifact.id} from being removed.`
-              );
-
-              return false;
-            }
-
-            return true;
+            return createdAt.isBefore(configs.maxAge);
           })
-          .map(artifact =>
-            octokit.actions
+          .map(artifact => {
+            if (devEnv) {
+              return new Promise(resolve => {
+                console.log(
+                  `Recognized development environment, preventing ${artifact.id} from being removed.`
+                );
+
+                resolve();
+              });
+            }
+
+            return octokit.actions
               .deleteArtifact({
                 ...configs.repoOptions,
                 artifact_id: artifact.id,
@@ -80,8 +78,8 @@ function run() {
                 console.log(
                   `Successfully removed artifact with id ${artifact.id}.`
                 );
-              })
-          )
+              });
+          })
       );
     });
 
