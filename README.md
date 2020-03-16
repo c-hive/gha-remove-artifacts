@@ -9,7 +9,7 @@ We created this Action to solve these problems. It can
 - keep release (tagged) artifacts
 
 `.github/workflows/remove-old-artifacts.yml`
-```
+```yml
 name: Remove old artifacts
 
 on:
