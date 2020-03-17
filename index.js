@@ -72,6 +72,13 @@ async function run() {
   return octokit.paginate(workflowRunsRequest).then(workflowRuns => {
     const artifactPromises = workflowRuns
       .filter(workflowRun => {
+        const workflowRunArtifactsAutomaticallyCleanedUp =
+          moment.utc().diff(workflowRun.created_at, "days") > 90;
+
+        if (workflowRunArtifactsAutomaticallyCleanedUp) {
+          return false;
+        }
+
         const skipWorkflow =
           configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
 
