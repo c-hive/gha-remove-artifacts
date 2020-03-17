@@ -34,4 +34,5 @@ jobs:
         with:
           commit_message: 'Update distified version'
           commit_options: '--no-verify'
+          branch: 'master'
           file_pattern: 'dist/index.js'
