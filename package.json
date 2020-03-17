@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "ncc build index.js -o dist",
+    "build": "ncc build index.js",
     "dev": "cross-env NODE_ENV=dev node ./index.js",
     "test": "echo 'No test framework configured'",
     "lint": "eslint . --no-error-on-unmatched-pattern",
