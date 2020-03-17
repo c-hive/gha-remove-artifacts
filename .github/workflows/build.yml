@@ -33,5 +33,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4.1.1
         with:
           commit_message: 'Update distified version'
-          commit_options: '--no-verify'
           file_pattern: 'dist/index.js'
