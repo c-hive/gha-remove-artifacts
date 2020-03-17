@@ -1,5 +1,6 @@
 const core = require("@actions/core");
 const { Octokit } = require("@octokit/action");
+const { throttling } = require("@octokit/plugin-throttling");
 const moment = require("moment");
 const yn = require("yn");
 
@@ -38,9 +39,16 @@ function getConfigs() {
   };
 }
 
+const ThrottledOctokit = Octokit.plugin(throttling);
+
 async function run() {
   const configs = getConfigs();
-  const octokit = new Octokit();
+  const octokit = new ThrottledOctokit({
+    throttle: {
+      onRateLimit: () => {},
+      onAbuseLimit: () => {},
+    },
+  });
 
   async function getTaggedCommits() {
     const listTagsRequest = octokit.repos.listTags.endpoint.merge({
