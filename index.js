@@ -45,8 +45,16 @@ async function run() {
   const configs = getConfigs();
   const octokit = new ThrottledOctokit({
     throttle: {
-      onRateLimit: () => {},
-      onAbuseLimit: () => {},
+      onRateLimit: (_, options) => {
+        console.error(
+          `Request quota exhausted for request ${options.method} ${options.url}`
+        );
+      },
+      onAbuseLimit: (_, options) => {
+        console.error(
+          `Abuse detected for request ${options.method} ${options.url}`
+        );
+      },
     },
   });
 
