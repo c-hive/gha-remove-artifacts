@@ -130,5 +130,9 @@ async function run() {
 }
 
 (async () => {
-  await run();
+  try {
+    await run();
+  } catch (err) {
+    core.setFailed(err.message);
+  }
 })();
