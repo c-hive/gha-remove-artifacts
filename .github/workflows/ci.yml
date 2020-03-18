@@ -2,6 +2,9 @@ name: CI
 
 on: [push]
 
+env:
+  node_version: "12.x"
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -24,31 +27,9 @@ jobs:
     - name: Lint
       run: ls package-lock.json && npm run lint || yarn lint
 
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v1
-    - name: Setup Node.js
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ env.node_version }}
-    - name: Cache node_modules
-      uses: actions/cache@v1
-      with:
-        path: node_modules
-        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.OS }}-node_modules-
-    - name: Install JS dependencies
-      run: ls package-lock.json && npm install || yarn install
-    - name: Test
-      run: ls package-lock.json && npm run test || yarn test
-
   run-action:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # needs: [lint, test]
     steps:
     - uses: actions/checkout@v1
     - name: Cache node_modules
@@ -60,6 +41,8 @@ jobs:
           ${{ runner.OS }}--
     - name: Install JS dependencies
       run: ls package-lock.json && npm install || yarn install
+    - name: Build
+      run: npm run build
     - name: Run action
       uses: ./
       with:

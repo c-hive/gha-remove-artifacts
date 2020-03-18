@@ -3,7 +3,7 @@ author: 'c-hive'
 description: ''
 runs:
   using: 'node12'
-  main: 'index.js'
+  main: 'dist/index.js'
 inputs:
   age:
     description: 'Artifacts older than this will be deleted (e.g. "2 months", "1 day"). Parsed by moment.'
