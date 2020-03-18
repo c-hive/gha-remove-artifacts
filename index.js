@@ -69,71 +69,76 @@ async function run() {
     configs.repoOptions
   );
 
-  return octokit.paginate(workflowRunsRequest).then(workflowRuns => {
-    const artifactPromises = workflowRuns
-      .filter(workflowRun => {
-        const workflowRunArtifactsAutomaticallyCleanedUp =
-          moment.utc().diff(workflowRun.created_at, "days") > 90;
+  return octokit
+    .paginate(workflowRunsRequest, ({ data }, done) => {
+      const stopPagination = data.find(
+        workflowRun => moment.utc().diff(workflowRun.created_at, "days") > 90
+      );
 
-        if (workflowRunArtifactsAutomaticallyCleanedUp) {
-          return false;
-        }
+      if (stopPagination) {
+        done();
+      }
 
-        const skipWorkflow =
-          configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
+      return data;
+    })
+    .then(workflowRuns => {
+      const artifactPromises = workflowRuns
+        .filter(workflowRun => {
+          const skipWorkflow =
+            configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
 
-        if (skipWorkflow) {
-          console.log(`Skipping tagged run ${workflowRun.head_sha}`);
+          if (skipWorkflow) {
+            console.log(`Skipping tagged run ${workflowRun.head_sha}`);
 
-          return false;
-        }
-
-        return true;
-      })
-      .map(workflowRun => {
-        const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-          {
-            ...configs.repoOptions,
-            run_id: workflowRun.id,
+            return false;
           }
-        );
 
-        return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
-          artifacts
-            .filter(artifact => {
-              const createdAt = moment(artifact.created_at);
+          return true;
+        })
+        .map(workflowRun => {
+          const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+            {
+              ...configs.repoOptions,
+              run_id: workflowRun.id,
+            }
+          );
 
-              return createdAt.isBefore(configs.maxAge);
-            })
-            .map(artifact => {
-              if (devEnv) {
-                return new Promise(resolve => {
-                  console.log(
-                    `Recognized development environment, preventing ${artifact.id} from being removed.`
-                  );
+          return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
+            artifacts
+              .filter(artifact => {
+                const createdAt = moment(artifact.created_at);
 
-                  resolve();
-                });
-              }
+                return createdAt.isBefore(configs.maxAge);
+              })
+              .map(artifact => {
+                if (devEnv) {
+                  return new Promise(resolve => {
+                    console.log(
+                      `Recognized development environment, preventing ${artifact.id} from being removed.`
+                    );
 
-              return octokit.actions
-                .deleteArtifact({
-                  ...configs.repoOptions,
-                  artifact_id: artifact.id,
-                })
-                .then(() => {
-                  console.log(
-                    `Successfully removed artifact with id ${artifact.id}.`
-                  );
-                });
-            })
-        );
-      });
+                    resolve();
+                  });
+                }
 
-    return Promise.all(artifactPromises).then(artifactDeletePromises =>
-      Promise.all([].concat(...artifactDeletePromises))
-    );
-  });
+                return octokit.actions
+                  .deleteArtifact({
+                    ...configs.repoOptions,
+                    artifact_id: artifact.id,
+                  })
+                  .then(() => {
+                    console.log(
+                      `Successfully removed artifact with id ${artifact.id}.`
+                    );
+                  });
+              })
+          );
+        });
+
+      return Promise.all(artifactPromises).then(artifactDeletePromises =>
+        Promise.all([].concat(...artifactDeletePromises))
+      );
+    });
 }
 
 (async () => {
