@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Remove old artifacts
-      uses: c-hive/gha-remove-artifacts
+      uses: c-hive/gha-remove-artifacts@master
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         age: '1 month'
