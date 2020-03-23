@@ -629,9 +629,9 @@ async function run() {
   });
 }
 
-(async () => {
-  await run();
-})();
+run().catch(err => {
+  core.setFailed(err.message);
+});
 
 
 /***/ }),
