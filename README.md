@@ -31,7 +31,7 @@ jobs:
         skip-tags: true
 ```
 
-The action makes use of the [`@octokit/plugin-throttling`](https://github.com/octokit/plugin-throttling.js) to throttle the requests and automatically retry them in case of exceeding the limitations.  It's strongly advised explicitly setting the [`timeout-minutes`](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes) option to prevent the action running excessively.
+The action makes use of the [`@octokit/plugin-throttling`](https://github.com/octokit/plugin-throttling.js) to throttle the requests and automatically retry them in case of exceeding the limitations.  It's strongly advised explicitly setting the [`timeout-minutes`](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes) option to prevent running the action for way too long.
 
 ## Conventions
 
