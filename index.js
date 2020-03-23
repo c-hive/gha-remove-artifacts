@@ -36,6 +36,7 @@ function getConfigs() {
     skipTags: devEnv
       ? yn(process.env.SKIP_TAGS)
       : yn(core.getInput("skip-tags")),
+    retry: true,
   };
 }
 
@@ -45,15 +46,31 @@ async function run() {
   const configs = getConfigs();
   const octokit = new ThrottledOctokit({
     throttle: {
-      onRateLimit: (_, options) => {
+      // The rule is disabled because the plugin doesn't automatically initiate the retry unless the function explicitly returns true.
+      // eslint-disable-next-line consistent-return
+      onRateLimit: (retryAfter, options) => {
         console.error(
           `Request quota exhausted for request ${options.method} ${options.url}`
         );
+
+        if (options.request.retryCount === 0) {
+          console.log(`Retrying after ${retryAfter} seconds!`);
+
+          return configs.retry;
+        }
       },
-      onAbuseLimit: (_, options) => {
+      // The rule is disabled because the plugin doesn't automatically initiate the retry unless the function explicitly returns true.
+      // eslint-disable-next-line consistent-return
+      onAbuseLimit: (retryAfter, options) => {
         console.error(
           `Abuse detected for request ${options.method} ${options.url}`
         );
+
+        if (options.request.retryCount === 0) {
+          console.log(`Retrying after ${retryAfter} seconds!`);
+
+          return configs.retry;
+        }
       },
     },
   });
