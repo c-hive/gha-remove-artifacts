@@ -46,11 +46,9 @@ async function run() {
   const configs = getConfigs();
   const octokit = new ThrottledOctokit({
     throttle: {
-      // The rule is disabled because the plugin doesn't automatically initiate the retry unless the function explicitly returns true.
-      // eslint-disable-next-line consistent-return
       onRateLimit: (retryAfter, options) => {
         console.error(
-          `Request quota exhausted for request ${options.method} ${options.url}`
+          `Request quota exhausted for request ${options.method} ${options.url}, remaining requests: ${options.request.retryCount}`
         );
 
         if (options.request.retryCount === 0) {
@@ -58,12 +56,12 @@ async function run() {
 
           return configs.retry;
         }
+
+        return false;
       },
-      // The rule is disabled because the plugin doesn't automatically initiate the retry unless the function explicitly returns true.
-      // eslint-disable-next-line consistent-return
       onAbuseLimit: (retryAfter, options) => {
         console.error(
-          `Abuse detected for request ${options.method} ${options.url}`
+          `Abuse detected for request ${options.method} ${options.url}, remaining requests: ${options.request.retryCount}`
         );
 
         if (options.request.retryCount === 0) {
@@ -71,6 +69,8 @@ async function run() {
 
           return configs.retry;
         }
+
+        return false;
       },
     },
   });
