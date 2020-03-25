@@ -8,7 +8,7 @@ Status and support
 - &#x2714; supported
 - &#x2716; no ongoing development
 
-[![CI](/../../workflows/CI/badge.svg)](/../../actions)
+[![CI](/../../workflows/CI/badge.svg?branch=master)](/../../actions)
 
 GitHub Action Artifacts are removed after [90 days](https://github.community/t5/GitHub-Actions/Managing-Actions-storage-space/m-p/41424/highlight/true#M4618). This cannot be configured either globally or per project. There's also a limit on free artifact space after which it becomes a payed resource. There's no configurable storage limit per project either, so some projects might use up all quota and not leave room for others.
 
