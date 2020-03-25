@@ -37,7 +37,6 @@ function getConfigs() {
       ? yn(process.env.SKIP_TAGS)
       : yn(core.getInput("skip-tags")),
     retry: true,
-    maxRetryCount: 3,
   };
 }
 
@@ -52,26 +51,18 @@ async function run() {
           `Request quota exhausted for request ${options.method} ${options.url}, number of total global retries: ${options.request.retryCount}`
         );
 
-        if (options.request.retryCount <= configs.maxRetryCount) {
-          console.log(`Retrying after ${retryAfter} seconds!`);
+        console.log(`Retrying after ${retryAfter} seconds!`);
 
-          return configs.retry;
-        }
-
-        return false;
+        return configs.retry;
       },
       onAbuseLimit: (retryAfter, options) => {
         console.error(
           `Abuse detected for request ${options.method} ${options.url}, retry count: ${options.request.retryCount}`
         );
 
-        if (options.request.retryCount <= configs.maxRetryCount) {
-          console.log(`Retrying after ${retryAfter} seconds!`);
+        console.log(`Retrying after ${retryAfter} seconds!`);
 
-          return configs.retry;
-        }
-
-        return false;
+        return configs.retry;
       },
     },
   });
