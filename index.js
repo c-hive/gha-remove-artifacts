@@ -37,6 +37,7 @@ function getConfigs() {
       ? yn(process.env.SKIP_TAGS)
       : yn(core.getInput("skip-tags")),
     retry: true,
+    maxRetryCount: 3,
   };
 }
 
@@ -48,10 +49,10 @@ async function run() {
     throttle: {
       onRateLimit: (retryAfter, options) => {
         console.error(
-          `Request quota exhausted for request ${options.method} ${options.url}, remaining requests: ${options.request.retryCount}`
+          `Request quota exhausted for request ${options.method} ${options.url}, retry count: ${options.request.retryCount}`
         );
 
-        if (options.request.retryCount === 0) {
+        if (options.request.retryCount <= configs.maxRetryCount) {
           console.log(`Retrying after ${retryAfter} seconds!`);
 
           return configs.retry;
@@ -61,10 +62,10 @@ async function run() {
       },
       onAbuseLimit: (retryAfter, options) => {
         console.error(
-          `Abuse detected for request ${options.method} ${options.url}, remaining requests: ${options.request.retryCount}`
+          `Abuse detected for request ${options.method} ${options.url}, retry count: ${options.request.retryCount}`
         );
 
-        if (options.request.retryCount === 0) {
+        if (options.request.retryCount <= configs.maxRetryCount) {
           console.log(`Retrying after ${retryAfter} seconds!`);
 
           return configs.retry;
