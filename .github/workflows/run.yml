@@ -1,4 +1,4 @@
-name: CI
+name: Run
 
 on: [push]
 
@@ -6,7 +6,7 @@ env:
   node_version: "12.x"
 
 jobs:
-  lint:
+  run-action:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -19,21 +19,16 @@ jobs:
       uses: actions/cache@v1
       with:
         path: node_modules
-        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.OS }}-node_modules-${{ hashFiles('**//package-lock.json') }}
         restore-keys: |
-          ${{ runner.OS }}-node_modules-
+          ${{ runner.OS }}--
     - name: Install JS dependencies
       run: ls package-lock.json && npm install || yarn install
-    - name: Lint
-      run: ls package-lock.json && npm run lint || yarn lint
-
-  create-test-artifact:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v1
-    - name: Create artifact for testing
-      uses: actions/upload-artifact@master
+    - name: Build
+      run: npm run build
+    - name: Run action
+      uses: ./
       with:
-        name: test-artifacts
-        path: ./
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        age: '1 second'
+        skip-tags: true
