@@ -26,14 +26,3 @@ jobs:
       run: ls package-lock.json && npm install || yarn install
     - name: Lint
       run: ls package-lock.json && npm run lint || yarn lint
-
-  create-test-artifact:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v1
-    - name: Create artifact for testing
-      uses: actions/upload-artifact@master
-      with:
-        name: test-artifacts
-        path: ./
