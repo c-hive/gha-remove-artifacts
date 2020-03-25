@@ -1,5 +1,6 @@
 const core = require("@actions/core");
 const { Octokit } = require("@octokit/action");
+const { throttling } = require("@octokit/plugin-throttling");
 const moment = require("moment");
 const yn = require("yn");
 
@@ -35,12 +36,36 @@ function getConfigs() {
     skipTags: devEnv
       ? yn(process.env.SKIP_TAGS)
       : yn(core.getInput("skip-tags")),
+    retriesEnabled: true,
   };
 }
 
+const ThrottledOctokit = Octokit.plugin(throttling);
+
 async function run() {
   const configs = getConfigs();
-  const octokit = new Octokit();
+  const octokit = new ThrottledOctokit({
+    throttle: {
+      onRateLimit: (retryAfter, options) => {
+        console.error(
+          `Request quota exhausted for request ${options.method} ${options.url}, number of total global retries: ${options.request.retryCount}`
+        );
+
+        console.log(`Retrying after ${retryAfter} seconds!`);
+
+        return configs.retriesEnabled;
+      },
+      onAbuseLimit: (retryAfter, options) => {
+        console.error(
+          `Abuse detected for request ${options.method} ${options.url}, retry count: ${options.request.retryCount}`
+        );
+
+        console.log(`Retrying after ${retryAfter} seconds!`);
+
+        return configs.retriesEnabled;
+      },
+    },
+  });
 
   async function getTaggedCommits() {
     const listTagsRequest = octokit.repos.listTags.endpoint.merge({
