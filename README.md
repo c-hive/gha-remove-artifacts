@@ -4,9 +4,14 @@
 
 GitHub Action Artifacts are removed after [90 days](https://github.community/t5/GitHub-Actions/Managing-Actions-storage-space/m-p/41424/highlight/true#M4618). This cannot be configured either globally or per project. There's also a limit on free artifact space after which it becomes a payed resource. There's no configurable storage limit per project either, so some projects might use up all quota and not leave room for others.
 
-We created this Action to solve these problems. It can
-- remove artifacts that are older than some custom timeframe
-- keep release (tagged) artifacts
+We created this Action to solve these problems. It
+- removes artifacts that are older than some custom timeframe
+- has the option to keep release (tagged) artifacts
+- [respects](https://github.com/octokit/plugin-throttling.js) GitHub's rate limit
+
+## Usage
+
+Add the following workflow to your repository and configure options.
 
 `.github/workflows/remove-old-artifacts.yml`
 ```yml
