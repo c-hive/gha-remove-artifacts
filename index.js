@@ -71,9 +71,11 @@ async function run() {
 
   return octokit
     .paginate(workflowRunsRequest, ({ data }, done) => {
-      const stopPagination = data.find(
-        workflowRun => moment.utc().diff(workflowRun.created_at, "days") > 90
-      );
+      const stopPagination = data.find(workflowRun => {
+        const createdAt = moment(workflowRun.created_at);
+
+        return createdAt.isBefore(moment.utc().subtract(90, "days"));
+      });
 
       if (stopPagination) {
         done();
