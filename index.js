@@ -36,7 +36,7 @@ function getConfigs() {
     skipTags: devEnv
       ? yn(process.env.SKIP_TAGS)
       : yn(core.getInput("skip-tags")),
-    retry: true,
+    retriesEnabled: true,
   };
 }
 
@@ -53,7 +53,7 @@ async function run() {
 
         console.log(`Retrying after ${retryAfter} seconds!`);
 
-        return configs.retry;
+        return configs.retriesEnabled;
       },
       onAbuseLimit: (retryAfter, options) => {
         console.error(
@@ -62,7 +62,7 @@ async function run() {
 
         console.log(`Retrying after ${retryAfter} seconds!`);
 
-        return configs.retry;
+        return configs.retriesEnabled;
       },
     },
   });
