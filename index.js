@@ -27,9 +27,12 @@ function getConfigs() {
   );
 
   return {
-    repoOptions: {
+    repo: {
       owner,
       repo,
+    },
+    pagination: {
+      perPage: 100,
     },
     maxAge: moment().subtract(age, units),
     skipTags: devEnv
@@ -44,7 +47,8 @@ async function run() {
 
   async function getTaggedCommits() {
     const listTagsRequest = octokit.repos.listTags.endpoint.merge({
-      ...configs.repoOptions,
+      ...configs.repo,
+      per_page: configs.pagination.perPage,
       ref: "tags",
     });
 
@@ -66,7 +70,10 @@ async function run() {
   }
 
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
-    configs.repoOptions
+    {
+      ...configs.repo,
+      per_page: configs.pagination.perPage,
+    }
   );
 
   return octokit
@@ -100,7 +107,8 @@ async function run() {
         .map(workflowRun => {
           const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
             {
-              ...configs.repoOptions,
+              ...configs.repo,
+              per_page: configs.pagination.perPage,
               run_id: workflowRun.id,
             }
           );
@@ -125,7 +133,7 @@ async function run() {
 
                 return octokit.actions
                   .deleteArtifact({
-                    ...configs.repoOptions,
+                    ...configs.repo,
                     artifact_id: artifact.id,
                   })
                   .then(() => {
