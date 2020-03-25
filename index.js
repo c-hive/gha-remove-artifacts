@@ -49,7 +49,7 @@ async function run() {
     throttle: {
       onRateLimit: (retryAfter, options) => {
         console.error(
-          `Request quota exhausted for request ${options.method} ${options.url}, retry count: ${options.request.retryCount}`
+          `Request quota exhausted for request ${options.method} ${options.url}, number of total global retries: ${options.request.retryCount}`
         );
 
         if (options.request.retryCount <= configs.maxRetryCount) {
