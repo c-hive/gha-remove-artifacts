@@ -528,9 +528,12 @@ function getConfigs() {
   );
 
   return {
-    repoOptions: {
+    repo: {
       owner,
       repo,
+    },
+    pagination: {
+      perPage: 100,
     },
     maxAge: moment().subtract(age, units),
     skipTags: devEnv
@@ -569,7 +572,8 @@ async function run() {
 
   async function getTaggedCommits() {
     const listTagsRequest = octokit.repos.listTags.endpoint.merge({
-      ...configs.repoOptions,
+      ...configs.repo,
+      per_page: configs.pagination.perPage,
       ref: "tags",
     });
 
@@ -591,67 +595,85 @@ async function run() {
   }
 
   const workflowRunsRequest = octokit.actions.listRepoWorkflowRuns.endpoint.merge(
-    configs.repoOptions
+    {
+      ...configs.repo,
+      per_page: configs.pagination.perPage,
+    }
   );
 
-  return octokit.paginate(workflowRunsRequest).then(workflowRuns => {
-    const artifactPromises = workflowRuns
-      .filter(workflowRun => {
-        const skipWorkflow =
-          configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
+  return octokit
+    .paginate(workflowRunsRequest, ({ data }, done) => {
+      const stopPagination = data.find(workflowRun => {
+        const createdAt = moment(workflowRun.created_at);
 
-        if (skipWorkflow) {
-          console.log(`Skipping tagged run ${workflowRun.head_sha}`);
-
-          return false;
-        }
-
-        return true;
-      })
-      .map(workflowRun => {
-        const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
-          {
-            ...configs.repoOptions,
-            run_id: workflowRun.id,
-          }
-        );
-
-        return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
-          artifacts
-            .filter(artifact => {
-              const createdAt = moment(artifact.created_at);
-
-              return createdAt.isBefore(configs.maxAge);
-            })
-            .map(artifact => {
-              if (devEnv) {
-                return new Promise(resolve => {
-                  console.log(
-                    `Recognized development environment, preventing ${artifact.id} from being removed.`
-                  );
-
-                  resolve();
-                });
-              }
-
-              return octokit.actions
-                .deleteArtifact({
-                  ...configs.repoOptions,
-                  artifact_id: artifact.id,
-                })
-                .then(() => {
-                  console.log(
-                    `Successfully removed artifact with id ${artifact.id}.`
-                  );
-                });
-            })
-        );
+        return createdAt.isBefore(moment.utc().subtract(90, "days"));
       });
 
-    return Promise.all(artifactPromises).then(artifactDeletePromises =>
-      Promise.all([].concat(...artifactDeletePromises))
-    );
-  });
+      if (stopPagination) {
+        done();
+      }
+
+      return data;
+    })
+    .then(workflowRuns => {
+      const artifactPromises = workflowRuns
+        .filter(workflowRun => {
+          const skipWorkflow =
+            configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
+
+          if (skipWorkflow) {
+            console.log(`Skipping tagged run ${workflowRun.head_sha}`);
+
+            return false;
+          }
+
+          return true;
+        })
+        .map(workflowRun => {
+          const workflowRunArtifactsRequest = octokit.actions.listWorkflowRunArtifacts.endpoint.merge(
+            {
+              ...configs.repo,
+              per_page: configs.pagination.perPage,
+              run_id: workflowRun.id,
+            }
+          );
+
+          return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
+            artifacts
+              .filter(artifact => {
+                const createdAt = moment(artifact.created_at);
+
+                return createdAt.isBefore(configs.maxAge);
+              })
+              .map(artifact => {
+                if (devEnv) {
+                  return new Promise(resolve => {
+                    console.log(
+                      `Recognized development environment, preventing ${artifact.id} from being removed.`
+                    );
+
+                    resolve();
+                  });
+                }
+
+                return octokit.actions
+                  .deleteArtifact({
+                    ...configs.repo,
+                    artifact_id: artifact.id,
+                  })
+                  .then(() => {
+                    console.log(
+                      `Successfully removed artifact with id ${artifact.id}.`
+                    );
+                  });
+              })
+          );
+        });
+
+      return Promise.all(artifactPromises).then(artifactDeletePromises =>
+        Promise.all([].concat(...artifactDeletePromises))
+      );
+    });
 }
 
 run().catch(err => {
