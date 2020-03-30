@@ -43,6 +43,7 @@ jobs:
         age: '1 month'
         skip-tags: true
 ```
+_Note: `secrets.GITHUB_TOKEN` is a repository-level access token already provided by the Actions framework, you don't need to set any secrets._
 
 ## Conventions
 
