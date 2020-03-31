@@ -677,7 +677,7 @@ async function run() {
 }
 
 run().catch(err => {
-  core.setFailed(err);
+  core.setFailed(err.toString());
 });
 
 
