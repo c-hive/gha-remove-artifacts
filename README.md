@@ -39,11 +39,9 @@ jobs:
     - name: Remove old artifacts
       uses: c-hive/gha-remove-artifacts@v1
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         age: '1 month'
         skip-tags: true
 ```
-_Note: `secrets.GITHUB_TOKEN` is a repository-level access token already provided by the Actions framework, you don't need to set any secrets._
 
 ## Conventions
 
