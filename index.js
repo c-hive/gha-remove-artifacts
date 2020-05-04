@@ -27,6 +27,8 @@ function getConfigs() {
     ")"
   );
 
+  console.log(core.getInput("skip-recent"));
+
   return {
     repo: {
       owner,
@@ -39,6 +41,7 @@ function getConfigs() {
     skipTags: devEnv
       ? yn(process.env.SKIP_TAGS)
       : yn(core.getInput("skip-tags")),
+    skipRecent: core.getInput("skip-recent"),
     retriesEnabled: true,
   };
 }
