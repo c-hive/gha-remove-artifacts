@@ -6,7 +6,7 @@ const yn = require("yn");
 
 const devEnv = process.env.NODE_ENV === "dev";
 
-const optionKeys = {
+const inputKeys = {
   AGE: devEnv ? "AGE" : "age",
   SKIP_TAGS: devEnv ? "SKIP_TAGS" : "skip-tags",
   SKIP_RECENT: devEnv ? "SKIP_RECENT" : "skip-recent",
@@ -17,7 +17,7 @@ if (devEnv) {
   require("dotenv-safe").config();
 }
 
-function readOption(key, isRequired = false) {
+function readInput(key, isRequired = false) {
   if (devEnv) {
     return process.env[key];
   }
@@ -27,7 +27,7 @@ function readOption(key, isRequired = false) {
 
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-  const [age, units] = readOption(optionKeys.AGE, true).split(" ");
+  const [age, units] = readInput(inputKeys.AGE, true).split(" ");
   const maxAge = moment().subtract(age, units);
 
   console.log(
@@ -39,7 +39,7 @@ function getConfigs() {
     ")"
   );
 
-  const skipRecent = readOption(optionKeys.SKIP_RECENT);
+  const skipRecent = readInput(inputKeys.SKIP_RECENT);
 
   if (skipRecent) {
     const parsedRecent = Number(skipRecent);
@@ -58,7 +58,7 @@ function getConfigs() {
       perPage: 100,
     },
     maxAge: moment().subtract(age, units),
-    skipTags: yn(readOption(optionKeys.SKIP_TAGS)),
+    skipTags: yn(readInput(inputKeys.SKIP_TAGS)),
     skipRecent: Number(skipRecent),
     retriesEnabled: true,
   };
