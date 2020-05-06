@@ -161,52 +161,50 @@ async function run() {
             }
           );
 
-          return octokit
-            .paginate(workflowRunArtifactsRequest)
-            .then(artifacts => {
-              return artifacts
-                .filter(artifact => {
-                  const skipRecentArtifact =
-                    configs.skipRecent &&
-                    configs.skipRecent > skippedArtifactsCounter;
+          return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
+            artifacts
+              .filter(artifact => {
+                const skipRecentArtifact =
+                  configs.skipRecent &&
+                  configs.skipRecent > skippedArtifactsCounter;
 
-                  if (skipRecentArtifact) {
+                if (skipRecentArtifact) {
+                  console.log(
+                    `Skipping recent artifact (id: ${artifact.id}, name: ${artifact.name}).`
+                  );
+
+                  skippedArtifactsCounter += 1;
+
+                  return false;
+                }
+
+                const createdAt = moment(artifact.created_at);
+
+                return createdAt.isBefore(configs.maxAge);
+              })
+              .map(artifact => {
+                if (devEnv) {
+                  return new Promise(resolve => {
                     console.log(
-                      `Skipping recent artifact (id: ${artifact.id}, name: ${artifact.name}).`
+                      `Recognized development environment, preventing artifact (id: ${artifact.id}, name: ${artifact.name}) from being removed.`
                     );
 
-                    skippedArtifactsCounter += 1;
+                    resolve();
+                  });
+                }
 
-                    return false;
-                  }
-
-                  const createdAt = moment(artifact.created_at);
-
-                  return createdAt.isBefore(configs.maxAge);
-                })
-                .map(artifact => {
-                  if (devEnv) {
-                    return new Promise(resolve => {
-                      console.log(
-                        `Recognized development environment, preventing artifact (id: ${artifact.id}, name: ${artifact.name}) from being removed.`
-                      );
-
-                      resolve();
-                    });
-                  }
-
-                  return octokit.actions
-                    .deleteArtifact({
-                      ...configs.repo,
-                      artifact_id: artifact.id,
-                    })
-                    .then(() => {
-                      console.log(
-                        `Successfully removed artifact (id: ${artifact.id}, name: ${artifact.name}).`
-                      );
-                    });
-                });
-            });
+                return octokit.actions
+                  .deleteArtifact({
+                    ...configs.repo,
+                    artifact_id: artifact.id,
+                  })
+                  .then(() => {
+                    console.log(
+                      `Successfully removed artifact (id: ${artifact.id}, name: ${artifact.name}).`
+                    );
+                  });
+              })
+          );
         });
 
       return Promise.all(artifactPromises).then(artifactDeletePromises =>
