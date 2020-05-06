@@ -18,10 +18,6 @@ if (devEnv) {
 }
 
 function readOption(key, isRequired = false) {
-  if (!optionKeys[key]) {
-    throw new Error(`${key} does not exist on the available options.`);
-  }
-
   if (devEnv) {
     return process.env[key];
   }
