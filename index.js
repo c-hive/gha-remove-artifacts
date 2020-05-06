@@ -6,16 +6,32 @@ const yn = require("yn");
 
 const devEnv = process.env.NODE_ENV === "dev";
 
+const optionKeys = {
+  AGE: devEnv ? "AGE" : "age",
+  SKIP_TAGS: devEnv ? "SKIP_TAGS" : "skip-tags",
+  SKIP_RECENT: devEnv ? "SKIP_RECENT" : "skip-recent",
+};
+
 if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
   require("dotenv-safe").config();
 }
 
+function readOption(key, isRequired = false) {
+  if (!optionKeys[key]) {
+    throw new Error(`${key} does not exist on the available options.`);
+  }
+
+  if (devEnv) {
+    return process.env[key];
+  }
+
+  return core.getInput(key, { required: isRequired });
+}
+
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-  const [age, units] = devEnv
-    ? process.env.AGE.split(" ")
-    : core.getInput("age", { required: true }).split(" ");
+  const [age, units] = readOption(optionKeys.AGE, true).split(" ");
   const maxAge = moment().subtract(age, units);
 
   console.log(
@@ -27,7 +43,15 @@ function getConfigs() {
     ")"
   );
 
-  console.log(core.getInput("skip-recent"));
+  const skipRecent = readOption(optionKeys.SKIP_RECENT);
+
+  if (skipRecent) {
+    const parsedRecent = Number(skipRecent);
+
+    if (Number.isNaN(parsedRecent)) {
+      throw new Error("skip-recent option must be type of number.");
+    }
+  }
 
   return {
     repo: {
@@ -38,10 +62,8 @@ function getConfigs() {
       perPage: 100,
     },
     maxAge: moment().subtract(age, units),
-    skipTags: devEnv
-      ? yn(process.env.SKIP_TAGS)
-      : yn(core.getInput("skip-tags")),
-    skipRecent: core.getInput("skip-recent"),
+    skipTags: yn(readOption(optionKeys.SKIP_TAGS)),
+    skipRecent: Number(skipRecent),
     retriesEnabled: true,
   };
 }
@@ -104,6 +126,8 @@ async function run() {
     }
   );
 
+  let skippedArtifactsCounter = 0;
+
   return octokit
     .paginate(workflowRunsRequest, ({ data }, done) => {
       const stopPagination = data.find(workflowRun => {
@@ -121,10 +145,10 @@ async function run() {
     .then(workflowRuns => {
       const artifactPromises = workflowRuns
         .filter(workflowRun => {
-          const skipWorkflow =
+          const skipTaggedWorkflow =
             configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
 
-          if (skipWorkflow) {
+          if (skipTaggedWorkflow) {
             console.log(`Skipping tagged run ${workflowRun.head_sha}`);
 
             return false;
@@ -141,36 +165,52 @@ async function run() {
             }
           );
 
-          return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
-            artifacts
-              .filter(artifact => {
-                const createdAt = moment(artifact.created_at);
+          return octokit
+            .paginate(workflowRunArtifactsRequest)
+            .then(artifacts => {
+              return artifacts
+                .filter(artifact => {
+                  const skipRecentArtifact =
+                    configs.skipRecent &&
+                    configs.skipRecent > skippedArtifactsCounter;
 
-                return createdAt.isBefore(configs.maxAge);
-              })
-              .map(artifact => {
-                if (devEnv) {
-                  return new Promise(resolve => {
+                  if (skipRecentArtifact) {
                     console.log(
-                      `Recognized development environment, preventing ${artifact.id} from being removed.`
+                      `Skipping recent artifact (id: ${artifact.id}, name: ${artifact.name}).`
                     );
 
-                    resolve();
-                  });
-                }
+                    skippedArtifactsCounter += 1;
 
-                return octokit.actions
-                  .deleteArtifact({
-                    ...configs.repo,
-                    artifact_id: artifact.id,
-                  })
-                  .then(() => {
-                    console.log(
-                      `Successfully removed artifact with id ${artifact.id}.`
-                    );
-                  });
-              })
-          );
+                    return false;
+                  }
+
+                  const createdAt = moment(artifact.created_at);
+
+                  return createdAt.isBefore(configs.maxAge);
+                })
+                .map(artifact => {
+                  if (devEnv) {
+                    return new Promise(resolve => {
+                      console.log(
+                        `Recognized development environment, preventing artifact (id: ${artifact.id}, name: ${artifact.name}) from being removed.`
+                      );
+
+                      resolve();
+                    });
+                  }
+
+                  return octokit.actions
+                    .deleteArtifact({
+                      ...configs.repo,
+                      artifact_id: artifact.id,
+                    })
+                    .then(() => {
+                      console.log(
+                        `Successfully removed artifact (id: ${artifact.id}, name: ${artifact.name}).`
+                      );
+                    });
+                });
+            });
         });
 
       return Promise.all(artifactPromises).then(artifactDeletePromises =>
