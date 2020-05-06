@@ -16,5 +16,5 @@ inputs:
     description: 'true/false. If enabled, tag build artifacts (e.g. release artifacts) will be kept.'
     required: false
   skip-recent:
-    description: 'Keep the specified number of artifacts even if they're older than the age.'
+    description: 'Keep the specified number of artifacts even if they are older than the age.'
     required: false
