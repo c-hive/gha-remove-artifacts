@@ -506,16 +506,28 @@ const yn = __webpack_require__(300);
 
 const devEnv = process.env.NODE_ENV === "dev";
 
+const inputKeys = {
+  AGE: devEnv ? "AGE" : "age",
+  SKIP_TAGS: devEnv ? "SKIP_TAGS" : "skip-tags",
+  SKIP_RECENT: devEnv ? "SKIP_RECENT" : "skip-recent",
+};
+
 if (devEnv) {
   // eslint-disable-next-line global-require, import/no-extraneous-dependencies
   __webpack_require__(245).config();
 }
 
+function readInput(key, isRequired = false) {
+  if (devEnv) {
+    return process.env[key];
+  }
+
+  return core.getInput(key, { required: isRequired });
+}
+
 function getConfigs() {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-  const [age, units] = devEnv
-    ? process.env.AGE.split(" ")
-    : core.getInput("age", { required: true }).split(" ");
+  const [age, units] = readInput(inputKeys.AGE, true).split(" ");
   const maxAge = moment().subtract(age, units);
 
   console.log(
@@ -527,6 +539,16 @@ function getConfigs() {
     ")"
   );
 
+  const skipRecent = readInput(inputKeys.SKIP_RECENT);
+
+  if (skipRecent) {
+    const parsedRecent = Number(skipRecent);
+
+    if (Number.isNaN(parsedRecent)) {
+      throw new Error("skip-recent option must be type of number.");
+    }
+  }
+
   return {
     repo: {
       owner,
@@ -536,9 +558,8 @@ function getConfigs() {
       perPage: 100,
     },
     maxAge: moment().subtract(age, units),
-    skipTags: devEnv
-      ? yn(process.env.SKIP_TAGS)
-      : yn(core.getInput("skip-tags")),
+    skipTags: yn(readInput(inputKeys.SKIP_TAGS)),
+    skipRecent: Number(skipRecent),
     retriesEnabled: true,
   };
 }
@@ -601,6 +622,8 @@ async function run() {
     }
   );
 
+  let skippedArtifactsCounter = 0;
+
   return octokit
     .paginate(workflowRunsRequest, ({ data }, done) => {
       const stopPagination = data.find(workflowRun => {
@@ -618,10 +641,10 @@ async function run() {
     .then(workflowRuns => {
       const artifactPromises = workflowRuns
         .filter(workflowRun => {
-          const skipWorkflow =
+          const skipTaggedWorkflow =
             configs.skipTags && taggedCommits.includes(workflowRun.head_sha);
 
-          if (skipWorkflow) {
+          if (skipTaggedWorkflow) {
             console.log(`Skipping tagged run ${workflowRun.head_sha}`);
 
             return false;
@@ -641,6 +664,20 @@ async function run() {
           return octokit.paginate(workflowRunArtifactsRequest).then(artifacts =>
             artifacts
               .filter(artifact => {
+                const skipRecentArtifact =
+                  configs.skipRecent &&
+                  configs.skipRecent > skippedArtifactsCounter;
+
+                if (skipRecentArtifact) {
+                  console.log(
+                    `Skipping recent artifact (id: ${artifact.id}, name: ${artifact.name}).`
+                  );
+
+                  skippedArtifactsCounter += 1;
+
+                  return false;
+                }
+
                 const createdAt = moment(artifact.created_at);
 
                 return createdAt.isBefore(configs.maxAge);
@@ -649,7 +686,7 @@ async function run() {
                 if (devEnv) {
                   return new Promise(resolve => {
                     console.log(
-                      `Recognized development environment, preventing ${artifact.id} from being removed.`
+                      `Recognized development environment, preventing artifact (id: ${artifact.id}, name: ${artifact.name}) from being removed.`
                     );
 
                     resolve();
@@ -663,7 +700,7 @@ async function run() {
                   })
                   .then(() => {
                     console.log(
-                      `Successfully removed artifact with id ${artifact.id}.`
+                      `Successfully removed artifact (id: ${artifact.id}, name: ${artifact.name}).`
                     );
                   });
               })
