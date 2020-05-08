@@ -32,6 +32,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         age: '1 second'
         skip-tags: true
+        skip-recent: 1
 
   create-test-artifact:
     runs-on: ubuntu-latest
