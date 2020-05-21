@@ -4,7 +4,7 @@
   "description": "GitHub Action to remove old artifacts",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build index.js",
+    "build": "ncc build index.js --minify",
     "dev": "cross-env NODE_ENV=dev node ./index.js",
     "test": "echo 'No test framework configured'",
     "lint": "eslint . --no-error-on-unmatched-pattern",
