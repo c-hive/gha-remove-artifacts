@@ -1,7 +1,7 @@
 {
   "name": "gha-remove-artifacts",
   "version": "1.2.0",
-  "description": "",
+  "description": "GitHub Action to remove old artifacts",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build index.js",
