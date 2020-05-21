@@ -14,8 +14,7 @@
     "lint",
     "test"
   ],
-  "files": [],
-  "keywords": [],
+  "keywords": ["github", "action", "remove", "artifact"],
   "author": "c-hive",
   "license": "MIT",
   "//dependencies": {},
