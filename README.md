@@ -15,6 +15,7 @@ GitHub Action Artifacts are removed after [90 days](https://github.community/t5/
 We created this Action to solve these problems. It
 - removes artifacts that are older than the specified age
 - has the option to keep release (tagged) artifacts
+- has the option to keep a number of recent artifacts
 - [respects](https://github.com/octokit/plugin-throttling.js) GitHub's rate limit
 
 ## Usage
