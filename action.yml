@@ -2,7 +2,7 @@ name: 'Remove artifacts'
 author: 'c-hive'
 description: ''
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
 inputs:
   age:
