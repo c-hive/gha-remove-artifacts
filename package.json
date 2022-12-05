@@ -27,7 +27,7 @@
     "@actions/core": "^1.2.2",
     "@octokit/action": "^2.0.0",
     "@octokit/plugin-throttling": "^3.2.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "yn": "^4.0.0"
   },
   "//devDependencies": {
