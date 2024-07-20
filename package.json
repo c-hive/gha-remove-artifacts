@@ -24,7 +24,7 @@
   "license": "MIT",
   "//dependencies": {},
   "dependencies": {
-    "@actions/core": "^1.2.2",
+    "@actions/core": "^1.9.1",
     "@octokit/action": "^2.0.0",
     "@octokit/plugin-throttling": "^3.2.0",
     "moment": "^2.24.0",
