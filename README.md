@@ -38,6 +38,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    # For private repos
+    permissions:
+      actions: write
+
     steps:
     - name: Remove old artifacts
       uses: c-hive/gha-remove-artifacts@v1
