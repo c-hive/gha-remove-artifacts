@@ -29,7 +29,7 @@
     "@actions/core": "^3.0.1",
     "@octokit/action": "^8.0.4",
     "@octokit/plugin-throttling": "^11.0.5",
-    "moment": "^2.30.1"
+    "moment": "^2.31.0"
   },
   "//devDependencies": {
     "@types/node": "Node.js types",
